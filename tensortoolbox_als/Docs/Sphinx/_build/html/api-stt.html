@@ -1,0 +1,211 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Spectral Tensor Train &#8212; TensorToolbox 0.3.3 documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Multi-linear algebra" href="api-multilinalg.html" />
+    <link rel="prev" title="Weighted Tensor Train Vectors" href="api-wttvec.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api-multilinalg.html" title="Multi-linear algebra"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="api-wttvec.html" title="Weighted Tensor Train Vectors"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" accesskey="U">API</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="api-wttvec.html"
+                        title="previous chapter">Weighted Tensor Train Vectors</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="api-multilinalg.html"
+                        title="next chapter">Multi-linear algebra</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api-stt.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-TensorToolbox">
+<span id="spectral-tensor-train"></span><h1>Spectral Tensor Train<a class="headerlink" href="#module-TensorToolbox" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="TensorToolbox.core.STT">
+<em class="property">class </em><code class="descclassname">TensorToolbox.core.</code><code class="descname">STT</code><span class="sig-paren">(</span><em>f</em>, <em>grids</em>, <em>params</em>, <em>range_dim=0</em>, <em>ftype='serial'</em>, <em>marshal_f=True</em>, <em>surrogateONOFF=False</em>, <em>surrogate_type=None</em>, <em>orders=None</em>, <em>orderAdapt=None</em>, <em>eps=0.0001</em>, <em>method='ttdmrg'</em>, <em>rs=None</em>, <em>fix_rank=False</em>, <em>Jinit=None</em>, <em>delta=0.0001</em>, <em>maxit=100</em>, <em>mv_eps=1e-06</em>, <em>mv_maxit=100</em>, <em>kickrank=None</em>, <em>store_location=''</em>, <em>store_overwrite=False</em>, <em>store_freq=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/SpectralTensorTrain.html#STT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.STT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor of the Spectral Tensor Train approximation <a class="reference internal" href="zrefs.html#bigoni2015" id="id1">[5]</a>. Given a function <code class="docutils literal"><span class="pre">f(x,theta,params):(Is,</span> <span class="pre">It)</span> <span class="pre">-&gt;</span> <span class="pre">R</span></code>
+with <code class="docutils literal"><span class="pre">dim(Is)=n</span></code> and <code class="docutils literal"><span class="pre">dim(It)=d</span></code>, construct an approximation of <code class="docutils literal"><span class="pre">g(theta,params):</span> <span class="pre">It</span> <span class="pre">-&gt;</span> <span class="pre">h_t(Is)</span></code>. For example <code class="docutils literal"><span class="pre">Is</span></code> could be the discretization of a spatial dimension, and <code class="docutils literal"><span class="pre">It</span></code> some parameter space, so that <code class="docutils literal"><span class="pre">f(x,theta,params)</span></code> describes a scalar field depending some parameters that vary in <code class="docutils literal"><span class="pre">It</span></code>. The <code class="docutils literal"><span class="pre">params</span></code> in the definition of <code class="docutils literal"><span class="pre">f</span></code> can be constants used by the function or othere objects that must be passed to the function definition.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>f</strong> (<em>function</em>) – multidimensional function to be approximated with format <code class="docutils literal"><span class="pre">f(x,theta,params)</span></code></li>
+<li><strong>grids</strong> (<em>list</em>) – this is a list with <code class="docutils literal"><span class="pre">len(grids)=dim(Is)+dim(It)</span></code> which can contain:
+a) 1-dimensional numpy.array of points discretizing the i-th dimension,
+b) a tuple <code class="docutils literal"><span class="pre">(PolyType,QuadType,PolyParams,span)</span></code> where <code class="docutils literal"><span class="pre">PolyType</span></code> is one of the polynomials available in <code class="xref py py-mod docutils literal"><span class="pre">SpectralToolbox.Spectral1D</span></code> and <code class="docutils literal"><span class="pre">QuadType</span></code> is one of the quadrature rules associated to the selected polynomial and <code class="docutils literal"><span class="pre">PolyParams</span></code> are the parameters for the selected polynomial. <code class="docutils literal"><span class="pre">span</span></code> is a tuple defining the left and right end for dimension i (Example: <code class="docutils literal"><span class="pre">(-3,np.inf)</span></code>)
+c) a tuple <code class="docutils literal"><span class="pre">(QuadType,span)</span></code> where <code class="docutils literal"><span class="pre">QuadType</span></code> is one of the quadrature rules available in <code class="xref py py-mod docutils literal"><span class="pre">SpectralToolbox.Spectral1D</span></code> without the selection of a particular polynomial type, and <code class="docutils literal"><span class="pre">span</span></code> is defined as above.</li>
+<li><strong>params</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – any list of parameters to be passed to the function <code class="docutils literal"><span class="pre">f</span></code></li>
+<li><strong>range_dim</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – define the dimension of the spatial dimension <code class="docutils literal"><span class="pre">Is</span></code>. For functionals <code class="docutils literal"><span class="pre">f(theta,params)</span></code>, <code class="docutils literal"><span class="pre">dim(Is)=0</span></code>. For scalar fileds in 3D, <code class="docutils literal"><span class="pre">dim(Is)=3</span></code>.</li>
+<li><strong>ftype</strong> (<em>strung</em>) – ‘serial’ if it can only evaluate the function pointwise,
+‘vector’ if it can evaluate many points at once.</li>
+<li><strong>marshal_f</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – whether to marshal the function f or not. For MPI support, the function f must be marshalable (does this adverb exists??).</li>
+<li><strong>surrogateONOFF</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – whether to construct the surrogate or not</li>
+<li><strong>surrogate_type</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – whether the surrogate will be an interpolating surrogate (<code class="docutils literal"><span class="pre">TensorTrain.LINEAR_INTERPOLATION</span></code> or <code class="docutils literal"><span class="pre">TensorTrain.LAGRANGE_INTERPOLATION</span></code>) or a projection surrogate (<code class="docutils literal"><span class="pre">TensorTrain.PROJECTION</span></code>)</li>
+<li><strong>orders</strong> (<em>list</em>) – polynomial orders for each dimension if <code class="docutils literal"><span class="pre">TensorTrain.PROJECTION</span></code> is used. If <code class="docutils literal"><span class="pre">orderAdapt==True</span></code> then the <code class="docutils literal"><span class="pre">orders</span></code> are starting orders that can be increased as needed by the construction algorithm. If this parameter is not provided but <code class="docutils literal"><span class="pre">orderAdapt==True</span></code>, then the starting order is 1 for all the dimensions.</li>
+<li><strong>orderAdapt</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – whether the order is fixed or not.</li>
+<li><strong>stt_store_location</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – path to a file where function evaluations can be stored and used in order to restart the construction.</li>
+<li><strong>stt_store_overwrite</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – whether to overwrite pre-existing files</li>
+<li><strong>stt_store_freq</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – storage frequency. Determines every how many seconds the state is stored. <code class="docutils literal"><span class="pre">stt_store_freq==0</span></code> stores every time it is possible.</li>
+<li><strong>empty</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Creates an instance without initializing it. All the content can be initialized using the <code class="docutils literal"><span class="pre">setstate()</span></code> function.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">For a description of the remaining parameters see <a class="reference internal" href="api-ttvec.html#TensorToolbox.core.TTvec" title="TensorToolbox.core.TTvec"><code class="xref py py-class docutils literal"><span class="pre">TTvec</span></code></a>.</p>
+</div>
+<dl class="method">
+<dt id="TensorToolbox.core.STT.__getitem__">
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/SpectralTensorTrain.html#STT.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.STT.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.STT.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>x_in</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/SpectralTensorTrain.html#STT.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.STT.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the surrogate on points <code class="docutils literal"><span class="pre">x_in</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x_in</strong> (<em>np.ndarray</em>) – 1 or 2 dimensional array of points in the parameter space where to evaluate the function. In 2 dimensions, each row is an entry, i.e. <code class="docutils literal"><span class="pre">x_in.shape[1]</span> <span class="pre">==</span> <span class="pre">self.param_dim</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">an array with dimension equal to the space dimension (<code class="docutils literal"><span class="pre">range_dim</span></code>) plus one. If <code class="docutils literal"><span class="pre">A</span></code> is the returned vector and <code class="docutils literal"><span class="pre">range_dim=2</span></code>, then <code class="docutils literal"><span class="pre">A[i,:,:]</span></code> is the value of the surrogate for <code class="docutils literal"><span class="pre">x_in[i,:]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.STT.integrate">
+<code class="descname">integrate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/SpectralTensorTrain.html#STT.integrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.STT.integrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the integral of the approximated function</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">an array with dimension equal to the space dimension (<code class="docutils literal"><span class="pre">range_dim</span></code>), containing the value of the integral.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.STT.prepare_TTapprox">
+<code class="descname">prepare_TTapprox</code><span class="sig-paren">(</span><em>force_redo=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/SpectralTensorTrain.html#STT.prepare_TTapprox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.STT.prepare_TTapprox" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares the TTapprox from the generic_approx</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.STT.to_v_0_3_0">
+<code class="descname">to_v_0_3_0</code><span class="sig-paren">(</span><em>store_location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/SpectralTensorTrain.html#STT.to_v_0_3_0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.STT.to_v_0_3_0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upgrade to v0.3.0</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/2/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) – path to the filename. This must be the main filename with no extension.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api-multilinalg.html" title="Multi-linear algebra"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="api-wttvec.html" title="Weighted Tensor Train Vectors"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" >API</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013-2015, Daniele Bigoni.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

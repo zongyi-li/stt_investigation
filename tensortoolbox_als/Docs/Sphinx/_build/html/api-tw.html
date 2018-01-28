@@ -1,0 +1,624 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Tensor Wrapper &#8212; TensorToolbox 0.3.3 documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tensor Train Vectors" href="api-ttvec.html" />
+    <link rel="prev" title="API" href="api.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api-ttvec.html" title="Tensor Train Vectors"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="API"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" accesskey="U">API</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="api.html"
+                        title="previous chapter">API</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="api-ttvec.html"
+                        title="next chapter">Tensor Train Vectors</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api-tw.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-TensorToolbox">
+<span id="tensor-wrapper"></span><h1>Tensor Wrapper<a class="headerlink" href="#module-TensorToolbox" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="TensorToolbox.core.TensorWrapper">
+<em class="property">class </em><code class="descclassname">TensorToolbox.core.</code><code class="descname">TensorWrapper</code><span class="sig-paren">(</span><em>f</em>, <em>X</em>, <em>params=None</em>, <em>W=None</em>, <em>twtype='array'</em>, <em>ftype='serial'</em>, <em>data=None</em>, <em>dtype=&lt;class 'float'&gt;</em>, <em>store_file=''</em>, <em>store_object=None</em>, <em>store_freq=None</em>, <em>store_overwrite=False</em>, <em>empty=False</em>, <em>maxprocs=None</em>, <em>marshal_f=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>A tensor wrapper is a data structure W that given a multi-dimensional scalar function f(X,params), and a set of coordinates {{x1}_i1,{x2}_i2,..,{xd}_id} indexed by the multi index {i1,..,id}, let you access f(x1_i1,..,xd_id) by W[i1,..,id]. The function evaluations are performed “as needed” and stored for future accesses.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>f</strong> – multi-dimensional scalar function of type f(x,params), x being a list.</li>
+<li><strong>X</strong> (<em>list</em>) – list of arrays with coordinates for each dimension</li>
+<li><strong>params</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)"><em>tuple</em></a>) – parameters to be passed to function f</li>
+<li><strong>W</strong> (<em>list</em>) – list of arrays with weights for each dimension</li>
+<li><strong>twtype</strong> (<a class="reference external" href="https://docs.python.org/2/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) – ‘array’ values are stored whenever computed, ‘view’ values are never stored and function f is always called</li>
+<li><strong>ftype</strong> (<em>strung</em>) – ‘serial’ if it can only evaluate the function pointwise,
+‘vector’ if it can evaluate many points at once.</li>
+<li><strong>data</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – initialization data of the Tensor Wrapper (already computed entries)</li>
+<li><strong>dtype</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#type" title="(in Python v2.7)"><em>type</em></a>) – type of output to be expected from f</li>
+<li><strong>store_file</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – file where to store the data</li>
+<li><strong>store_object</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – a storable object that must be stored in place of the TensorWrapper</li>
+<li><strong>store_freq</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – how frequently to store the TensorWrapper (seconds)</li>
+<li><strong>store_overwrite</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – whether to overwrite pre-existing files.</li>
+<li><strong>empty</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Creates an instance without initializing it. All the content can be initialized using the <code class="docutils literal"><span class="pre">setstate()</span></code> function.</li>
+<li><strong>maxprocs</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Number of processors to be used in the function evaluation (MPI)</li>
+<li><strong>marshal_f</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – whether to marshal the function or not</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Several shape parameters are used by the TensorWrapper in order to keep track of reshaping and slicings, without affecting the underlying shape of the tensor which is always preserved. The following table lists the existing shapes and their meaning.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="14%" />
+<col width="11%" />
+<col width="75%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Shape attribute/function</th>
+<th class="head">Applied transformations (ordered)</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><a class="reference internal" href="#TensorToolbox.core.TensorWrapper.get_global_shape" title="TensorToolbox.core.TensorWrapper.get_global_shape"><code class="xref py py-meth docutils literal"><span class="pre">get_global_shape()</span></code></a></td>
+<td>None</td>
+<td>The original shape of the tensor. This shape can be modified only  through a refinement of the grid using the function <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.refine" title="TensorToolbox.core.TensorWrapper.refine"><code class="xref py py-meth docutils literal"><span class="pre">refine()</span></code></a>.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#TensorToolbox.core.TensorWrapper.get_view_shape" title="TensorToolbox.core.TensorWrapper.get_view_shape"><code class="xref py py-meth docutils literal"><span class="pre">get_view_shape()</span></code></a></td>
+<td>VIEW</td>
+<td>The particular view of the tensor, defined by the view in <code class="xref py py-attr docutils literal"><span class="pre">TensorWrapper.maps</span></code> set active using <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.set_active_view" title="TensorToolbox.core.TensorWrapper.set_active_view"><code class="xref py py-meth docutils literal"><span class="pre">set_active_view()</span></code></a>.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#TensorToolbox.core.TensorWrapper.get_extended_shape" title="TensorToolbox.core.TensorWrapper.get_extended_shape"><code class="xref py py-meth docutils literal"><span class="pre">get_extended_shape()</span></code></a></td>
+<td>VIEW, QUANTICS</td>
+<td>The shape of the extended tensor in order to allow for the quantics folding with basis <code class="xref py py-attr docutils literal"><span class="pre">TensorWrapper.Q</span></code>.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#TensorToolbox.core.TensorWrapper.get_ghost_shape" title="TensorToolbox.core.TensorWrapper.get_ghost_shape"><code class="xref py py-meth docutils literal"><span class="pre">get_ghost_shape()</span></code></a></td>
+<td>VIEW, QUANTICS, RESHAPE</td>
+<td>The shape of the tensor reshaped using <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.reshape" title="TensorToolbox.core.TensorWrapper.reshape"><code class="xref py py-meth docutils literal"><span class="pre">reshape()</span></code></a>. If a Quantics folding is pre-applied, then the reshape is on the extended shape.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#TensorToolbox.core.TensorWrapper.get_shape" title="TensorToolbox.core.TensorWrapper.get_shape"><code class="xref py py-meth docutils literal"><span class="pre">get_shape()</span></code></a></td>
+<td>VIEW, QUANTICS, RESHAPE, FIX_IDXS</td>
+<td>The shape of the tensor with <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.fix_indices" title="TensorToolbox.core.TensorWrapper.fix_indices"><code class="xref py py-meth docutils literal"><span class="pre">fix_indices()</span></code></a> and <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.release_indices" title="TensorToolbox.core.TensorWrapper.release_indices"><code class="xref py py-meth docutils literal"><span class="pre">release_indices()</span></code></a>. This is the view that is always used when the tensor is accessed through the function <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.__getitem__" title="TensorToolbox.core.TensorWrapper.__getitem__"><code class="xref py py-meth docutils literal"><span class="pre">__getitem__()</span></code></a> (i.e. <code class="docutils literal"><span class="pre">TW[...]</span></code>)</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.__getitem__">
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>idxs_in</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.extended_is_view">
+<code class="descname">extended_is_view</code><span class="sig-paren">(</span><em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.extended_is_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.extended_is_view" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the idxs is in the view shape. False if it is outside</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.fix_indices">
+<code class="descname">fix_indices</code><span class="sig-paren">(</span><em>idxs</em>, <em>dims</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.fix_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.fix_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fix some of the indices in the tensor wrapper and reshape/resize it accordingly. The internal storage of the data is still done with respect to the global indices, but once some indices are fixed, the TensorWrapper can be accessed using just the remaining free indices.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>idxs</strong> (<em>list</em>) – list of indices to be fixed</li>
+<li><strong>dims</strong> (<em>list</em>) – list of dimensions to which the indices refer to</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_extended_ndim">
+<code class="descname">get_extended_ndim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_extended_ndim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_extended_ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the quantics folding has been performed on the current view, then this returns the number of dimensions of the extended tensor to the next power of Q. If the folding has not been performed, this returns an error.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_extended_shape">
+<code class="descname">get_extended_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_extended_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_extended_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the quantics folding has been performed on the current view, then this returns the shape of the extended tensor to the next power of Q. If the folding has not been performed, this returns the view shape.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_extended_size">
+<code class="descname">get_extended_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_extended_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_extended_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the quantics folding has been performed on the current view, then this returns the size of the extended tensor to the next power of Q. If the folding has not been performed, this returns an error.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_ghost_ndim">
+<code class="descname">get_ghost_ndim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_ghost_ndim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_ghost_ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the <code class="docutils literal"><span class="pre">ghost_shape</span></code> is set for this view, then it returns the number of dimensions obtained after quantics folding by the function <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.set_Q" title="TensorToolbox.core.TensorWrapper.set_Q"><code class="xref py py-meth docutils literal"><span class="pre">set_Q()</span></code></a> or after reshaping by the function <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.reshape" title="TensorToolbox.core.TensorWrapper.reshape"><code class="xref py py-meth docutils literal"><span class="pre">reshape()</span></code></a>. Otherwise the number of dimensions of the view is returned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_ghost_shape">
+<code class="descname">get_ghost_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_ghost_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_ghost_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the <code class="docutils literal"><span class="pre">ghost_shape</span></code> is set for this view, then it returns the shape obtained after quantics folding by the function <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.set_Q" title="TensorToolbox.core.TensorWrapper.set_Q"><code class="xref py py-meth docutils literal"><span class="pre">set_Q()</span></code></a> or after reshaping by the function <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.reshape" title="TensorToolbox.core.TensorWrapper.reshape"><code class="xref py py-meth docutils literal"><span class="pre">reshape()</span></code></a>. Otherwise the shape of the extended shape is returned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_ghost_size">
+<code class="descname">get_ghost_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_ghost_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_ghost_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the <code class="docutils literal"><span class="pre">ghost_shape</span></code> is set for this view, then it returns the size obtained after quantics folding by the function <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.set_Q" title="TensorToolbox.core.TensorWrapper.set_Q"><code class="xref py py-meth docutils literal"><span class="pre">set_Q()</span></code></a> or after reshaping by the function <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.reshape" title="TensorToolbox.core.TensorWrapper.reshape"><code class="xref py py-meth docutils literal"><span class="pre">reshape()</span></code></a>. Otherwise the size of the view is returned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_global_ndim">
+<code class="descname">get_global_ndim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_global_ndim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_global_ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Always returns the ndim of the underlying tensor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_global_shape">
+<code class="descname">get_global_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_global_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_global_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Always returns the shape of the underlying tensor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_global_size">
+<code class="descname">get_global_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_global_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_global_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Always returns the size of the underlying tensor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_ndim">
+<code class="descname">get_ndim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_ndim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Always returns the number of dimensions of the tensor view</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_shape">
+<code class="descname">get_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Always returns the shape of the actual tensor view</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_size">
+<code class="descname">get_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Always returns the size of the tensor view</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_view_ndim">
+<code class="descname">get_view_ndim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_view_ndim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_view_ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Always returns the ndim of the current view</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_view_shape">
+<code class="descname">get_view_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_view_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_view_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Always returns the shape of the current view</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.get_view_size">
+<code class="descname">get_view_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.get_view_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.get_view_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Always returns the size of the current view</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.ghost_to_global">
+<code class="descname">ghost_to_global</code><span class="sig-paren">(</span><em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.ghost_to_global"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.ghost_to_global" title="Permalink to this definition">¶</a></dt>
+<dd><p>This maps the index from the current ghost shape of the view to the global shape.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idxs_in</strong> (<em>list</em>) – list of indices to be transformed</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">no slicing is admitted here. Preprocess <code class="docutils literal"><span class="pre">idxs</span></code> with <a class="reference internal" href="api-core.html#TensorToolbox.core.expand_idxs" title="TensorToolbox.core.expand_idxs"><code class="xref py py-meth docutils literal"><span class="pre">expand_idxs()</span></code></a> if slicing is required.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.ghost_to_view">
+<code class="descname">ghost_to_view</code><span class="sig-paren">(</span><em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.ghost_to_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.ghost_to_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>This maps the index from the current ghost shape of the view to the view shape.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idxs_in</strong> (<em>list</em>) – list of indices to be transformed</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">no slicing is admitted here. Preprocess <code class="docutils literal"><span class="pre">idxs</span></code> with <a class="reference internal" href="api-core.html#TensorToolbox.core.expand_idxs" title="TensorToolbox.core.expand_idxs"><code class="xref py py-meth docutils literal"><span class="pre">expand_idxs()</span></code></a> if slicing is required.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.global_to_ghost">
+<code class="descname">global_to_ghost</code><span class="sig-paren">(</span><em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.global_to_ghost"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.global_to_ghost" title="Permalink to this definition">¶</a></dt>
+<dd><p>This maps the index from the global shape to the ghost shape.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idxs</strong> (<em>list</em>) – list of indices to be transformed</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">no slicing is admitted here. Preprocess <code class="docutils literal"><span class="pre">idxs</span></code> with <a class="reference internal" href="api-core.html#TensorToolbox.core.expand_idxs" title="TensorToolbox.core.expand_idxs"><code class="xref py py-meth docutils literal"><span class="pre">expand_idxs()</span></code></a> if slicing is required.</p>
+</div>
+<p>For <a class="reference internal" href="#TensorToolbox.core.TensorWrapper" title="TensorToolbox.core.TensorWrapper"><code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper()</span></code></a> <code class="docutils literal"><span class="pre">A</span></code>, this corresponds to:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="o">.</span><span class="n">view_to_ghost</span><span class="p">(</span> <span class="n">A</span><span class="o">.</span><span class="n">global_to_view</span><span class="p">(</span> <span class="n">idxs</span> <span class="p">)</span> <span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.global_to_view">
+<code class="descname">global_to_view</code><span class="sig-paren">(</span><em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.global_to_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.global_to_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>This maps the index from the global shape to the view shape.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idxs</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)"><em>tuple</em></a>) – tuple representing an index to be transformed.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">no slicing is admitted here. Preprocess <code class="docutils literal"><span class="pre">idxs</span></code> with <a class="reference internal" href="api-core.html#TensorToolbox.core.expand_idxs" title="TensorToolbox.core.expand_idxs"><code class="xref py py-meth docutils literal"><span class="pre">expand_idxs()</span></code></a> if slicing is required.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">this returns an error if the <code class="docutils literal"><span class="pre">idxs</span></code> do not belong to the index mapping of the current view.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.refine">
+<code class="descname">refine</code><span class="sig-paren">(</span><em>X_new</em>, <em>tol=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.refine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.refine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refine the global discretization. The new discretization must contain the old one.</p>
+<p>This function takes care of updating all the indices in the global view as well in all the other views.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>X_new</strong> (<em>list</em>) – list of coordinates of the new refinement</li>
+<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – tolerance for the matching of coordinates</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Any existing reshaping of the views is discarded.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.release_indices">
+<code class="descname">release_indices</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.release_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.release_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Release all the indices in the tensor wrapper which were fixed using <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.fix_indices" title="TensorToolbox.core.TensorWrapper.fix_indices"><code class="xref py py-meth docutils literal"><span class="pre">fix_indices()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.reset_ghost_shape">
+<code class="descname">reset_ghost_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.reset_ghost_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.reset_ghost_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the shape of the tensor erasing the reshape and quantics foldings.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.reset_shape">
+<code class="descname">reset_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.reset_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.reset_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the shape of the tensor erasing the reshape and quantics foldings.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.reshape">
+<code class="descname">reshape</code><span class="sig-paren">(</span><em>newshape</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.reshape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.reshape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reshape the tensor. The number of items in the new shape must be consistent with <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.get_extended_size" title="TensorToolbox.core.TensorWrapper.get_extended_size"><code class="xref py py-meth docutils literal"><span class="pre">get_extended_size()</span></code></a>, i.e. with the number of items in the extended quantics size or the view size if <code class="docutils literal"><span class="pre">Q</span></code> is not set for this view.</p>
+<p>This will unset any fixed index for the current view set using <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.fix_indices" title="TensorToolbox.core.TensorWrapper.fix_indices"><code class="xref py py-meth docutils literal"><span class="pre">fix_indices()</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>newshape</strong> (<em>list</em>) – new shape to be applied to the tensor.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.set_Q">
+<code class="descname">set_Q</code><span class="sig-paren">(</span><em>Q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.set_Q"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.set_Q" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the quantics folding base for the current view.</p>
+<p>This will unset any fixed index for the current view set using <a class="reference internal" href="#TensorToolbox.core.TensorWrapper.fix_indices" title="TensorToolbox.core.TensorWrapper.fix_indices"><code class="xref py py-meth docutils literal"><span class="pre">fix_indices()</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Q</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – folding base.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.set_active_view">
+<code class="descname">set_active_view</code><span class="sig-paren">(</span><em>view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.set_active_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.set_active_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a view among the ones in <code class="docutils literal"><span class="pre">self.maps</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>view</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – name of the view to be set as active</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.set_active_weights">
+<code class="descname">set_active_weights</code><span class="sig-paren">(</span><em>flag</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.set_active_weights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.set_active_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set whether to use the weights or not.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>flag</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If <code class="docutils literal"><span class="pre">True</span></code> the items returned by the Tensor Wrapper will be weighted according to the weights provided at construction time. If <code class="docutils literal"><span class="pre">False</span></code> the original values of the function will be returned.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.set_view">
+<code class="descname">set_view</code><span class="sig-paren">(</span><em>view</em>, <em>X_map</em>, <em>tol=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.set_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.set_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set or add a view to <code class="docutils literal"><span class="pre">self.maps</span></code>. This resest all the existing reshape parameters in existing views.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>view</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – name of the view to be added</li>
+<li><strong>X_map</strong> (<em>list</em>) – list of coordinates of the new view</li>
+<li><strong>tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – tolerance for the matching of coordinates</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.set_weights">
+<code class="descname">set_weights</code><span class="sig-paren">(</span><em>W</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.set_weights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.set_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a new list of weights for the tensor
+:param list W: list of np.ndarray with weights for each dimension</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.shape_to_ghost">
+<code class="descname">shape_to_ghost</code><span class="sig-paren">(</span><em>idxs_in</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.shape_to_ghost"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.shape_to_ghost" title="Permalink to this definition">¶</a></dt>
+<dd><p>This maps the index from the current shape of the view (fixed indices) to the ghost shape.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idxs_in</strong> (<em>list</em>) – list of indices to be transformed</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">slicing is admitted here.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.shape_to_global">
+<code class="descname">shape_to_global</code><span class="sig-paren">(</span><em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.shape_to_global"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.shape_to_global" title="Permalink to this definition">¶</a></dt>
+<dd><p>This maps the index from the current shape of the view to the global shape.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idxs_in</strong> (<em>list</em>) – list of indices to be transformed</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">no slicing is admitted here. Preprocess <code class="docutils literal"><span class="pre">idxs</span></code> with <a class="reference internal" href="api-core.html#TensorToolbox.core.expand_idxs" title="TensorToolbox.core.expand_idxs"><code class="xref py py-meth docutils literal"><span class="pre">expand_idxs()</span></code></a> if slicing is required.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.shape_to_view">
+<code class="descname">shape_to_view</code><span class="sig-paren">(</span><em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.shape_to_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.shape_to_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>This maps the index from the current shape of the view to the view shape.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idxs_in</strong> (<em>list</em>) – list of indices to be transformed</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">no slicing is admitted here. Preprocess <code class="docutils literal"><span class="pre">idxs</span></code> with <a class="reference internal" href="api-core.html#TensorToolbox.core.expand_idxs" title="TensorToolbox.core.expand_idxs"><code class="xref py py-meth docutils literal"><span class="pre">expand_idxs()</span></code></a> if slicing is required.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.to_v_0_3_0">
+<code class="descname">to_v_0_3_0</code><span class="sig-paren">(</span><em>store_location</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.to_v_0_3_0"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.to_v_0_3_0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upgrade to v0.3.0</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/2/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) – path to the filename. This must be the main filename with no extension.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.view_to_ghost">
+<code class="descname">view_to_ghost</code><span class="sig-paren">(</span><em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.view_to_ghost"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.view_to_ghost" title="Permalink to this definition">¶</a></dt>
+<dd><p>This maps the index from the view to the ghost shape.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idxs</strong> (<em>list</em>) – list of indices to be transformed</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">no slicing is admitted here. Preprocess <code class="docutils literal"><span class="pre">idxs</span></code> with <a class="reference internal" href="api-core.html#TensorToolbox.core.expand_idxs" title="TensorToolbox.core.expand_idxs"><code class="xref py py-meth docutils literal"><span class="pre">expand_idxs()</span></code></a> if slicing is required.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">this returns an error if the ghost shape is obtained by quantics folding, because the one view index can be pointing to many indices in the folding.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.TensorWrapper.view_to_global">
+<code class="descname">view_to_global</code><span class="sig-paren">(</span><em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/tensor_wrapper.html#TensorWrapper.view_to_global"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TensorWrapper.view_to_global" title="Permalink to this definition">¶</a></dt>
+<dd><p>This maps the index in view to the global indices of the full tensor wrapper.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>idxs_in</strong> (<em>list</em>) – list of indices to be transformed</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">no slicing is admitted here. Preprocess <code class="docutils literal"><span class="pre">idxs</span></code> with <a class="reference internal" href="api-core.html#TensorToolbox.core.expand_idxs" title="TensorToolbox.core.expand_idxs"><code class="xref py py-meth docutils literal"><span class="pre">expand_idxs()</span></code></a> if slicing is required.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api-ttvec.html" title="Tensor Train Vectors"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="API"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" >API</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013-2015, Daniele Bigoni.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

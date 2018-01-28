@@ -1,0 +1,425 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Tensor Wrapper &#8212; TensorToolbox 0.3.3 documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tensor Train Vectors" href="ttvec.html" />
+    <link rel="prev" title="Tutorial" href="tutorial.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ttvec.html" title="Tensor Train Vectors"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="tutorial.html" accesskey="U">Tutorial</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tensor Wrapper</a><ul>
+<li><a class="reference internal" href="#construction">Construction</a></li>
+<li><a class="reference internal" href="#access-and-data">Access and data</a></li>
+<li><a class="reference internal" href="#views">Views</a></li>
+<li><a class="reference internal" href="#grid-refinement">Grid refinement</a></li>
+<li><a class="reference internal" href="#quantics-extension">Quantics extension</a></li>
+<li><a class="reference internal" href="#reshape">Reshape</a></li>
+<li><a class="reference internal" href="#summary-of-shapes">Summary of shapes</a></li>
+<li><a class="reference internal" href="#storage">Storage</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="previous chapter">Tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ttvec.html"
+                        title="next chapter">Tensor Train Vectors</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/tw.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tensor-wrapper">
+<h1>Tensor Wrapper<a class="headerlink" href="#tensor-wrapper" title="Permalink to this headline">¶</a></h1>
+<p>The tensor wrapper is a data structure which mimics the behavior of a <a class="reference external" href="http://docs.scipy.org/doc/numpy/index.html">numpy.ndarray</a> and associates each item of the tensor with the evaluation of a user-defined function on the corresponding grid point.</p>
+<p>Let for example <span class="math">\(\mathcal{X} = \times_{i=1}^d {\bf x}_i\)</span>, where <span class="math">\({\bf x}_i\)</span> define the position of the grid points in the <span class="math">\(i\)</span>-th direction. Let us consider the function <span class="math">\(f:\mathcal{X}\rightarrow \mathbb{R}^{n_1\times \ldots \times n_m}\)</span>. Let us define the tensor valued tensor <span class="math">\(\mathcal{A}=f(\mathcal{X})\)</span>. Thus any entry <span class="math">\(\mathcal{A}[i_1,\ldots,i_d] = f({\bf x}_{i_1},\ldots,{\bf x}_{i_d})\)</span> is a tensor in <span class="math">\(\mathbb{R}^{n_1\times \ldots \times n_m}\)</span>. The storage of the whole tensor <span class="math">\(\mathcal{A}\)</span> can be problematic for big <span class="math">\(d\)</span> and <span class="math">\(m\)</span>, and not necessary if one is just willing to sample values from it.</p>
+<p>The <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> allows the access to the elements of <span class="math">\(\mathcal{A}\)</span> which however are not all allocated, but computed on-the-fly and stored in a hash-table data structure (a Python dictionary). The <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> can be reshaped and accessed as if it was a <a class="reference external" href="http://docs.scipy.org/doc/numpy/index.html">numpy.ndarray</a> (including slicing of indices). Additionally it allows the existence of multiple views of the tensor, sharing among them the allocated data, and it allows the <em>Quantics</em> folding used within the <em>Quantics Tensor Train</em> <a class="reference internal" href="zrefs.html#khoromskij2011" id="id2">[7]</a><a class="reference internal" href="zrefs.html#khoromskij2010" id="id3">[6]</a> routines <code class="xref py py-class docutils literal"><span class="pre">QTTvec</span></code>.</p>
+<p>In the following we will use a simple example to show the capabilities of this data structure. We will let <span class="math">\(d=2\)</span> and <span class="math">\(f:\mathcal{X}\rightarrow \mathbb{R}\)</span>.</p>
+<div class="section" id="construction">
+<h2>Construction<a class="headerlink" href="#construction" title="Permalink to this headline">¶</a></h2>
+<p>In order to <strong>construct</strong> a <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> we need first to define a grid and a function.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">itertools</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">TensorToolbox</span> <span class="k">as</span> <span class="nn">TT</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x_fine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;k&#39;</span><span class="p">:</span> <span class="mf">1.</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">*</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;k&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span> <span class="o">=</span> <span class="n">TT</span><span class="o">.</span><span class="n">TensorWrapper</span><span class="p">(</span> <span class="n">f</span><span class="p">,</span> <span class="p">[</span> <span class="n">x_fine</span> <span class="p">]</span><span class="o">*</span><span class="n">d</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="access-and-data">
+<h2>Access and data<a class="headerlink" href="#access-and-data" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> can then be <strong>accessed</strong> as a <a class="reference external" href="http://docs.scipy.org/doc/numpy/index.html">numpy.ndarray</a>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">-0.33333333333333337</span>
+</pre></div>
+</div>
+<p>This access to the <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> has caused the evaluation of the function <span class="math">\(f\)</span> and the storage of the associated value. In order to check the <strong>fill level</strong> of the <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code>, we do:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_fill_level</span><span class="p">()</span>
+<span class="go">1</span>
+</pre></div>
+</div>
+<p>The <strong>evaluation indices</strong> at which the function has been evaluated can be retrived this way:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_fill_idxs</span><span class="p">()</span>
+<span class="go">[(1, 2)]</span>
+</pre></div>
+</div>
+<p>The <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> can be accessed using also <strong>slicing</strong> along some of the coordinates:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="p">[:,</span><span class="mi">1</span><span class="p">:</span><span class="mi">6</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">array([[-0.66666666666666674, 0.0, 0.66666666666666652],</span>
+<span class="go">    [-0.66666666666666674, 0.0, 0.66666666666666652],</span>
+<span class="go">    [-0.33333333333333337, 0.0, 0.66666666666666652],</span>
+<span class="go">    [0.0, 0.0, 0.66666666666666652],</span>
+<span class="go">    [0.33333333333333326, 0.33333333333333326, 0.66666666666666652],</span>
+<span class="go">    [0.66666666666666652, 0.66666666666666652, 0.66666666666666652],</span>
+<span class="go">    [1.0, 1.0, 1.0]], dtype=object)</span>
+</pre></div>
+</div>
+<p>The <strong>data</strong> already computed are stored in the dictionary <code class="xref py py-attr docutils literal"><span class="pre">TensorWrapper.data</span></code>, which one can access and modify at his/her own risk. The data can be <strong>erased</strong> just by resetting the <code class="xref py py-attr docutils literal"><span class="pre">TensorWrapper.data</span></code> field:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+</pre></div>
+</div>
+<p>The constructed <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> to which has not been applied any of the view/extension/reshaping functions presented in the following, is called the <strong>global</strong> tensor wrapper. The shape informations regarding the global wrapper can be <em>always</em> accessed by:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_global_shape</span><span class="p">()</span>
+<span class="go">(7, 7)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_global_ndim</span><span class="p">()</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_global_size</span><span class="p">()</span>
+<span class="go">49</span>
+</pre></div>
+</div>
+<p>If no view/extension/reshaping has been applied to the <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code>, then the same output is obtained by:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span>
+<span class="go">(7, 7)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_ndim</span><span class="p">()</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
+<span class="go">49</span>
+</pre></div>
+</div>
+<p>or by</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(7, 7)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">ndim</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">size</span>
+<span class="go">49</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If any view/extension/reshape has been applied to the <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code>, then the output of <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.get_global_shape()</span></code> and <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.get_shape()</span></code> will differ. Anyway <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.get_global_shape()</span></code> will <em>always</em> return the information regarding the <strong>global</strong> tensor wrapper.</p>
+</div>
+</div>
+<div class="section" id="views">
+<h2>Views<a class="headerlink" href="#views" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> allows the definition of multiple views over the defined tensor. The information regarding each view are contained in the dictionary <code class="xref py py-attr docutils literal"><span class="pre">TensoWrapper.maps</span></code>. The main view is called <code class="docutils literal"><span class="pre">full</span></code> and is defined at construction time. Additional views can be defined through the function <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.set_view()</span></code>. Let’s continue the previous example, by adding a new view to the wrapper with a coarser grid.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x_coarse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">set_view</span><span class="p">(</span> <span class="s1">&#39;coarse&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">x_coarse</span><span class="p">]</span><span class="o">*</span><span class="n">d</span> <span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The grid of the <code class="docutils literal"><span class="pre">full</span></code> view must contain the grids associated to the new view.</p>
+</div>
+<p>The different views can be accessed separately, but they all refer to the same global data structure. In order to access the <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> through one of its views, the view must be <strong>activated</strong>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">set_active_view</span><span class="p">(</span><span class="s1">&#39;coarse&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">set_active_view</span><span class="p">(</span><span class="s1">&#39;full&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The following figure shows the global grid as well as its two views, the <code class="docutils literal"><span class="pre">full</span></code> and the <code class="docutils literal"><span class="pre">coarse</span></code> views. The allocated indicies are also highlighted.</p>
+<div class="figure" id="id7">
+<img alt="_images/TensorWrapperViews.png" src="_images/TensorWrapperViews.png" />
+<p class="caption"><span class="caption-text">The global tensor and two of its views. The <code class="docutils literal"><span class="pre">full</span></code> view corresponds by default to the global tensor. The <code class="docutils literal"><span class="pre">coarse</span></code> is contained in the <code class="docutils literal"><span class="pre">full</span></code> view. The uniquely allocated values of the tensor are shown in the different views.</span></p>
+</div>
+<p>The shape characteristics of the active view can be accessed through <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.get_view_shape()</span></code> and the corresponding commands for <code class="docutils literal"><span class="pre">ndim</span></code> and <code class="docutils literal"><span class="pre">size</span></code>. For example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">set_active_view</span><span class="p">(</span><span class="s1">&#39;full&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_view_shape</span><span class="p">()</span>
+<span class="go">(7, 7)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span>
+<span class="go">(7, 7)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">set_active_view</span><span class="p">(</span><span class="s1">&#39;coarse&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_global_shape</span><span class="p">()</span>
+<span class="go">(7, 7)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_view_shape</span><span class="p">()</span>
+<span class="go">(4, 4)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span>
+<span class="go">(4, 4)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(4, 4)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="grid-refinement">
+<h2>Grid refinement<a class="headerlink" href="#grid-refinement" title="Permalink to this headline">¶</a></h2>
+<p>The <em>global</em> grid can be refined using the function <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.refine()</span></code>, provinding a grid which contains the previous one. This refinement does not alter the allocated data which is instead preserved and mapped to the new mesh.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x_ffine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">13</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">refine</span><span class="p">([</span><span class="n">x_ffine</span><span class="p">]</span><span class="o">*</span><span class="n">d</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="figure" id="id8">
+<img alt="_images/TensorWrapperRefine.png" src="_images/TensorWrapperRefine.png" />
+<p class="caption"><span class="caption-text">The global tensor and the two views defined, after the grid refinement.</span></p>
+</div>
+</div>
+<div class="section" id="quantics-extension">
+<h2>Quantics extension<a class="headerlink" href="#quantics-extension" title="Permalink to this headline">¶</a></h2>
+<p>The quantics extension is used for extending the indices of the tesnor to the next power of <code class="docutils literal"><span class="pre">Q</span></code>. The extension is performed so that the last coordinate point is appended to the coordinate points the necessary number of times. In order to apply the extension on a particular view, one needs to activate the view and then use the method <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.set_Q()</span></code>.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">set_active_view</span><span class="p">(</span><span class="s1">&#39;full&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_view_shape</span><span class="p">()</span>
+<span class="go">(13, 13)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_extended_shape</span><span class="p">()</span>
+<span class="go">(13, 13)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">set_Q</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_extended_shape</span><span class="p">()</span>
+<span class="go">(16, 16)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span>
+<span class="go">(16, 16)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(16, 16)</span>
+</pre></div>
+</div>
+<p>We can see that <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.get_extended_shape()</span></code> returns the same output of <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.get_viw_shape()</span></code> if no quantics extension has been applied.</p>
+<p>Using the following code we can investigate the content of the extended tensor wrapper and plot it as shown in the following figure.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="n">TW</span><span class="p">[:,:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="figure" id="id9">
+<img alt="_images/TensorWrapperQExtension.png" src="_images/TensorWrapperQExtension.png" />
+<p class="caption"><span class="caption-text">The <em>Quantics</em> extension applied to the <code class="docutils literal"><span class="pre">full</span></code> view results in the repetition of its limit values in the tensor grid.</span></p>
+</div>
+</div>
+<div class="section" id="reshape">
+<h2>Reshape<a class="headerlink" href="#reshape" title="Permalink to this headline">¶</a></h2>
+<p>The shape of each view can be changed as long as the size returned by <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.get_extended_size()</span></code> is unchanged. This means that if <em>no quantics</em> extension has been applied, the size must correspond to <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.get_view_size()</span></code>. If a <em>quantics</em> extension has been applied, the size must correspond to <code class="xref py py-meth docutils literal"><span class="pre">TensorWrapper.get_extended_size()</span></code>.</p>
+<p>For example let us reshape the <em>quantics</em> extended <code class="docutils literal"><span class="pre">full</span></code> view of the tensor to the shape (4,16).</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">set_active_view</span><span class="p">(</span><span class="s1">&#39;full&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">8</span><span class="p">,</span><span class="mi">32</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_extended_shape</span><span class="p">()</span>
+<span class="go">(16, 16)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span>
+<span class="go">(8, 32)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(8, 32)</span>
+</pre></div>
+</div>
+<p>This results in the following reshaping of the tensor view:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="n">TW</span><span class="p">[:,:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="figure" id="id10">
+<img alt="_images/TensorWrapperReshape.png" src="_images/TensorWrapperReshape.png" />
+<p class="caption"><span class="caption-text">Reshaping of the <em>quantics</em> extended <code class="docutils literal"><span class="pre">full</span></code> view.</span></p>
+</div>
+<p>The <em>quantics</em> extension is used mainly to obtain a complete folding of base <code class="docutils literal"><span class="pre">Q</span></code>. In this case this is obtained by:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">math</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">TW</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">2</span><span class="p">)))</span> <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_extended_shape</span><span class="p">()</span>
+<span class="go">(16, 16)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()</span>
+<span class="go">(2, 2, 2, 2, 2, 2, 2, 2)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(2, 2, 2, 2, 2, 2, 2, 2)</span>
+</pre></div>
+</div>
+<p>We finally can reset the shape to the <em>view</em> shape using:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">reset_shape</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="summary-of-shapes">
+<h2>Summary of shapes<a class="headerlink" href="#summary-of-shapes" title="Permalink to this headline">¶</a></h2>
+<p>Information regarding several shape transformations are always hold in the data structure. A hierarchy of shapes is used. The top shape is the <strong>global</strong> shape. In the following table we list the different shapes, their description and the main functions related and affecting them.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="5%" />
+<col width="46%" />
+<col width="50%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Shape</strong></td>
+<td><strong>Description</strong></td>
+<td><strong>Functions</strong></td>
+</tr>
+<tr class="row-even"><td>Global</td>
+<td>This is the underlying shape of the <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code>.</td>
+<td><code class="xref py py-meth docutils literal"><span class="pre">get_global_shape()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_global_ndim()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_global_size()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">refine()</span></code></td>
+</tr>
+<tr class="row-odd"><td>View</td>
+<td>Multiple views can be defined for a <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code>. The views are defined as nested grids into the global grid. The default view is called <code class="docutils literal"><span class="pre">full</span></code> and is defined automatically at construction time</td>
+<td><code class="xref py py-meth docutils literal"><span class="pre">set_view()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">set_active_view()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_view_shape()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_view_ndim()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_view_size()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">refine()</span></code></td>
+</tr>
+<tr class="row-even"><td>Quantics Extended</td>
+<td>Each view can be extended to the next power of <code class="docutils literal"><span class="pre">Q</span></code> in order to allow the <em>quantics</em> folding <a class="reference internal" href="zrefs.html#khoromskij2011" id="id5">[7]</a><a class="reference internal" href="zrefs.html#khoromskij2010" id="id6">[6]</a> of the tensor.</td>
+<td><code class="xref py py-meth docutils literal"><span class="pre">set_Q()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_extended_shape()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_extended_ndim()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_extended_size()</span></code></td>
+</tr>
+<tr class="row-odd"><td>Reshape</td>
+<td>This is the result of the reshape of the tensor. If any of the preceding shape transformations have been applied, then the reshape is applied to the lowest transformation.</td>
+<td><code class="xref py py-meth docutils literal"><span class="pre">reshape()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_shape()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_ndim()</span></code>, <code class="xref py py-meth docutils literal"><span class="pre">get_size()</span></code>, <code class="xref py py-attr docutils literal"><span class="pre">shape</span></code>, <code class="xref py py-attr docutils literal"><span class="pre">ndim</span></code>, <code class="xref py py-attr docutils literal"><span class="pre">size</span></code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If a shape at any level is modified, every lower reshaping is automatically erased, due to possible inconsistency. For example, if a view is modified, any quantics extension and/or reshape of the view are reset.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The <code class="xref py py-meth docutils literal"><span class="pre">refine()</span></code> function erases all the quantics extensions and the reshapes of each view, but not the views themselves. Instead for each view, the <code class="xref py py-meth docutils literal"><span class="pre">refine()</span></code> function updates the corresponding indices, fitting the old views to the new refinement.</p>
+</div>
+</div>
+<div class="section" id="storage">
+<h2>Storage<a class="headerlink" href="#storage" title="Permalink to this headline">¶</a></h2>
+<p>Instances of the class <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> can be stored in files and reloaded as needed. The class <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> extends the class <code class="xref py py-class docutils literal"><span class="pre">storable_object</span></code>, which is responsible for storing objects in the <a class="reference internal" href="api-wttvec.html#module-TensorToolbox" title="TensorToolbox"><code class="xref py py-mod docutils literal"><span class="pre">TensorToolbox</span></code></a>.</p>
+<p>For the sake of efficiency and readability of the code, the <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> is stored in two different files with a common file name <code class="docutils literal"><span class="pre">filename</span></code>:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">filename.pkl</span></code> is a serialized version of the object thorugh the <a class="reference external" href="https://docs.python.org/2/library/pickle.html">pickle</a> library. The <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code> serializes a minimal amount of auxiliary information needed for the definition of shapes, meshes, etc. The allocated data are not serialized using pickle, because when the amount of data is big, this would result in a very slow storage.</li>
+<li><code class="docutils literal"><span class="pre">filename.h5</span></code> is a binary file containing the allocated data of the <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code>. This file is generated using <a class="reference external" href="http://www.h5py.org/">h5py</a> and results in fast loading, writing and appending of data.</li>
+</ul>
+<p>Let us store the <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code>, we have been using up to now.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">set_store_location</span><span class="p">(</span><span class="s1">&#39;tensorwrapper&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Check that the files have been stored:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ ls
+tensorwrapper.h5  tensorwrapper.pkl  WrapperExample.py
+</pre></div>
+</div>
+<p>Let’s now reload the <code class="xref py py-class docutils literal"><span class="pre">TensorWrapper</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span> <span class="o">=</span> <span class="n">TT</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;tensorwrapper&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The storage of the tensor wrapper can also be triggered using a timer. This is mostly useful when many time consuming computations need to be performed in order to allocate the desired entries of the tensor, and one wants to have always a backup copy of the data. The trigger for the storage is checked any time a new entry needs to be allocated fo storage.</p>
+<p>For example, we can set the storage frequency to 5s:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">time</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="o">.</span><span class="n">set_store_freq</span><span class="p">(</span> <span class="mi">5</span> <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">6.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TW</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Checking the output we see:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ ls
+tensorwrapper.h5      tensorwrapper.pkl     WrapperExample.py
+tensorwrapper.h5.old  tensorwrapper.pkl.old
+</pre></div>
+</div>
+<p>where the files <code class="docutils literal"><span class="pre">.pkl</span></code> and <code class="docutils literal"><span class="pre">.h5</span></code> are the files stored when the time-trigger is activated, while the files <code class="docutils literal"><span class="pre">.pkl.old</span></code> and <code class="docutils literal"><span class="pre">h5.old</span></code> are backup files containing the data stored in the previous example.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ttvec.html" title="Tensor Train Vectors"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="tutorial.html" >Tutorial</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013-2015, Daniele Bigoni.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

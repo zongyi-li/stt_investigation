@@ -1,0 +1,383 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>TensorToolbox.core.storage &#8212; TensorToolbox 0.3.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for TensorToolbox.core.storage</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1"># This file is part of TensorToolbox.</span>
+<span class="c1">#</span>
+<span class="c1"># TensorToolbox is free software: you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the LGNU Lesser General Public License as published by</span>
+<span class="c1"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># TensorToolbox is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># LGNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the LGNU Lesser General Public License</span>
+<span class="c1"># along with TensorToolbox.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c1">#</span>
+<span class="c1"># DTU UQ Library</span>
+<span class="c1"># Copyright (C) 2014-2016 The Technical University of Denmark</span>
+<span class="c1"># Scientific Computing Section</span>
+<span class="c1"># Department of Applied Mathematics and Computer Science</span>
+<span class="c1">#</span>
+<span class="c1"># Author: Daniele Bigoni</span>
+<span class="c1">#</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;load&#39;</span><span class="p">,</span><span class="s1">&#39;storable_object&#39;</span><span class="p">,</span><span class="s1">&#39;ttcross_store&#39;</span><span class="p">,</span><span class="s1">&#39;to_v_0_3_0&#39;</span><span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">cPickle</span> <span class="k">as</span> <span class="nn">pkl</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pickle</span> <span class="k">as</span> <span class="nn">pkl</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+
+<span class="kn">from</span> <span class="nn">TensorToolbox</span> <span class="k">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">TT_version</span>
+
+<div class="viewcode-block" id="to_v_0_3_0"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.to_v_0_3_0">[docs]</a><span class="k">def</span> <span class="nf">to_v_0_3_0</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Used to upgrade the storage version from version &lt;0.3.0 to version 0.3.0</span>
+<span class="sd">    </span>
+<span class="sd">    :param string filename: path to the filename. This must be the main filename with no extension.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pkl_location</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s2">&quot;.pkl&quot;</span>
+    
+    <span class="c1"># Open the old version</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Opening </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">pkl_location</span><span class="p">)</span>
+    <span class="n">ff</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">pkl_location</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">pkl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span>
+    <span class="n">ff</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">VERSION</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># Copy old version for backup</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Backup copy </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">pkl_location</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">pkl_location</span><span class="p">,</span> <span class="n">pkl_location</span> <span class="o">+</span> <span class="s2">&quot;.deprec&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Remove old version file</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Removing </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">pkl_location</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">pkl_location</span><span class="p">)</span>
+
+        <span class="c1"># Update version of the object</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Updating objects&quot;</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">to_v_0_3_0</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+        <span class="c1"># Force storage</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Storing </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The version of the file is already &gt;0.3.0&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="load"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.load">[docs]</a><span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">load_data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Used to load TensorToolbox data.</span>
+<span class="sd">    </span>
+<span class="sd">    :param string filename: path to the filename. This must be the main filename with no extension.</span>
+<span class="sd">    :param bool load_data: whether to load additional data from &quot;.h5&quot; files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pkl_location</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s2">&quot;.pkl&quot;</span>
+    <span class="n">h5_location</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s2">&quot;.h5&quot;</span>
+    
+    <span class="n">ff</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">pkl_location</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">pkl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span>
+    <span class="n">ff</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">load_data</span><span class="p">:</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">h5_location</span><span class="o">=</span><span class="n">h5_location</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">obj</span></div>
+
+<div class="viewcode-block" id="storable_object"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.storable_object">[docs]</a><span class="k">class</span> <span class="nc">storable_object</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Constructor of objects that can be stored</span>
+<span class="sd">    </span>
+<span class="sd">    :param string store_location: path to the storage file</span>
+<span class="sd">    :param int store_freq: Number of seconds between each storage</span>
+<span class="sd">    :param bool store_overwrite: whether to overwrite existing files</span>
+<span class="sd">    :param object store_object: parent object to be stored in place of the current object</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        **serialize_list**: list of objects that must be serialized.</span>
+<span class="sd">        **subserialize_list**: list of objects for which the serialization must be done separately.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store_location</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">store_freq</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">store_overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">store_object</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="c1">#######################################</span>
+        <span class="c1"># List of attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_freq</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_location</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">serialize_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;VERSION&#39;</span><span class="p">,</span> <span class="s1">&#39;serialize_list&#39;</span><span class="p">,</span> <span class="s1">&#39;subserialize_list&#39;</span><span class="p">,</span> <span class="s1">&#39;store_location&#39;</span><span class="p">,</span> <span class="s1">&#39;store_freq&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subserialize_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Non serialized attributes which must be re-init on setstate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_store_time</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># End list</span>
+        <span class="c1">#######################################</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span> <span class="o">=</span> <span class="n">TT_version</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_location</span> <span class="o">=</span> <span class="n">store_location</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_freq</span> <span class="o">=</span> <span class="n">store_freq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_store_time</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_object</span> <span class="o">=</span> <span class="n">store_object</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_object</span> <span class="o">==</span> <span class="kc">None</span>  <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store_location</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">store_overwrite</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;The file </span><span class="si">%s</span><span class="s2"> already exist.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_location</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span> <span class="p">[</span> <span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">tag</span> <span class="p">))</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialize_list</span> <span class="p">]</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">state</span><span class="p">,</span> <span class="n">store_object</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">state</span><span class="p">[</span><span class="n">tag</span><span class="p">])</span>
+        <span class="c1"># Reset parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_store_time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_store_object</span><span class="p">(</span> <span class="n">store_object</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="storable_object.set_store_location"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.storable_object.set_store_location">[docs]</a>    <span class="k">def</span> <span class="nf">set_store_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">store_location</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Set a new store location for the object</span>
+<span class="sd">        </span>
+<span class="sd">        :param string store_location: new store location</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_location</span> <span class="o">=</span> <span class="n">store_location</span></div>
+
+<div class="viewcode-block" id="storable_object.set_store_freq"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.storable_object.set_store_freq">[docs]</a>    <span class="k">def</span> <span class="nf">set_store_freq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">store_freq</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Set a new store frequency for the object</span>
+<span class="sd">        </span>
+<span class="sd">        :param int store_freq: new store location</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_freq</span> <span class="o">=</span> <span class="n">store_freq</span></div>
+
+    <span class="k">def</span> <span class="nf">to_be_stored</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># force = force or (self.last_store_time == None) or (self.store_freq == None)</span>
+        <span class="c1"># if self.store_location not in (&#39;&#39;,None) and \</span>
+        <span class="c1">#    (force or time.time() &gt; self.last_store_time + self.store_freq): </span>
+        <span class="c1">#     return True</span>
+        <span class="c1"># else: return False</span>
+
+        <span class="c1"># Ensure first storage when last_store_time is not set yet</span>
+        <span class="n">force</span> <span class="o">=</span> <span class="n">force</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store_freq</span> <span class="o">!=</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_store_time</span> <span class="o">==</span> <span class="kc">None</span><span class="p">)</span> 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_location</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> \
+           <span class="p">(</span><span class="n">force</span> <span class="ow">or</span> \
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store_freq</span> <span class="o">!=</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_store_time</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_freq</span><span class="p">)</span>
+            <span class="p">):</span> 
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span> <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">def</span> <span class="nf">reset_store_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_store_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    
+    <span class="k">def</span> <span class="nf">set_store_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store_object</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_object</span> <span class="o">=</span> <span class="n">store_object</span>
+    
+<div class="viewcode-block" id="storable_object.h5store"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.storable_object.h5store">[docs]</a>    <span class="k">def</span> <span class="nf">h5store</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h5file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Used to store additional data in hdf5 format. To be redefined in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="storable_object.h5load"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.storable_object.h5load">[docs]</a>    <span class="k">def</span> <span class="nf">h5load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h5file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Used to load additional data in hdf5 format. To be redefined in subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+    
+<div class="viewcode-block" id="storable_object.load"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.storable_object.load">[docs]</a>    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">h5_location</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Used to load additional data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_object</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="c1"># Old pickle serialization. Nothing extra to be loaded.</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># New storage of objects (versions &gt; 0.3.0)</span>
+                <span class="c1"># The input will be:</span>
+                <span class="c1">#   - an h5 file containing the data</span>
+                
+                <span class="c1"># File name</span>
+                <span class="k">if</span> <span class="n">h5_location</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">h5_location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_location</span> <span class="o">+</span> <span class="s2">&quot;.h5&quot;</span>
+                
+                <span class="c1"># Call the data loading method in self</span>
+                <span class="n">h5file</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5_location</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">h5load</span><span class="p">(</span><span class="n">h5file</span><span class="p">)</span>
+                <span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">store_object</span><span class="o">.</span><span class="n">load</span><span class="p">()</span></div>
+    
+<div class="viewcode-block" id="storable_object.store"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.storable_object.store">[docs]</a>    <span class="k">def</span> <span class="nf">store</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Used to store any object in the library.</span>
+
+<span class="sd">        :param bool force: force storage before time</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_object</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_be_stored</span><span class="p">(</span><span class="n">force</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="c1"># Old pickle serialization of objects</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store_location</span><span class="p">):</span>
+                        <span class="c1"># If the file already exists, make a safety copy</span>
+                        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store_location</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_location</span><span class="o">+</span><span class="s2">&quot;.old&quot;</span><span class="p">)</span>
+                    <span class="n">ff</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store_location</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+                    <span class="n">pkl</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ff</span><span class="p">)</span>
+                    <span class="n">ff</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># New storage of objects (versions &gt; 0.3.0)</span>
+                    <span class="c1"># The output will be two files containing:</span>
+                    <span class="c1">#   - a pickle file conatining the serialization of self</span>
+                    <span class="c1">#   - an h5 file containing the data</span>
+
+                    <span class="c1"># File names</span>
+                    <span class="n">pkl_location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_location</span> <span class="o">+</span> <span class="s2">&quot;.pkl&quot;</span>
+                    <span class="n">h5_location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_location</span> <span class="o">+</span> <span class="s2">&quot;.h5&quot;</span>
+                    
+                    <span class="c1"># Store old copy for safety</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pkl_location</span><span class="p">):</span>
+                        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">pkl_location</span><span class="p">,</span> <span class="n">pkl_location</span> <span class="o">+</span> <span class="s2">&quot;.old&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">h5_location</span><span class="p">):</span>
+                        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">h5_location</span><span class="p">,</span> <span class="n">h5_location</span> <span class="o">+</span> <span class="s2">&quot;.old&quot;</span><span class="p">)</span>
+                    
+                    <span class="c1"># Dump the serialized version of the object</span>
+                    <span class="n">ff</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">pkl_location</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+                    <span class="n">pkl</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ff</span><span class="p">)</span>
+                    <span class="n">ff</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    
+                    <span class="c1"># Call the data storage method in self</span>
+                    <span class="n">h5file</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">h5_location</span><span class="p">,</span><span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="c1"># Read/write if exists, create otherwise</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">h5store</span><span class="p">(</span><span class="n">h5file</span><span class="p">)</span>
+                    <span class="n">h5file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">reset_store_time</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">store_object</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="n">force</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="storable_object.to_v_0_3_0"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.storable_object.to_v_0_3_0">[docs]</a>    <span class="k">def</span> <span class="nf">to_v_0_3_0</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store_location</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; To be implemented for objects that need to be upgraded to v0.3.0.</span>
+<span class="sd">        </span>
+<span class="sd">        :param string filename: path to the filename. This must be the main filename with no extension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">VERSION</span> <span class="o">=</span> <span class="s1">&#39;0.3.0&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_location</span> <span class="o">=</span> <span class="n">store_location</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serialize_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;VERSION&#39;</span><span class="p">)</span></div></div>
+
+
+<span class="c1">##############################################</span>
+<span class="c1"># DEPRECATED</span>
+<span class="c1">##############################################</span>
+<div class="viewcode-block" id="ttcross_store"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.ttcross_store">[docs]</a><span class="k">def</span> <span class="nf">ttcross_store</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="n">TW</span><span class="p">,</span><span class="n">TTapp</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Used to store the computed values of a TTcross approximation. Usually needed when the single function evaluation is demanding or when we need to restart TTcross later on.</span>
+
+<span class="sd">    :param string path: path pointing to the location where to store the data</span>
+<span class="sd">    :param TensorWrapper TW: Tensor wrapper used to build the ttcross approximation. TW.get_data(), TW.get_X() and TW.get_params() will be stored.</span>
+<span class="sd">    :param TTvec TTapp: TTcross approximation. TTapp.ttcross.Jinit will be stored.</span>
+
+<span class="sd">    .. deprecated:: 0.3.0</span>
+<span class="sd">       Use the objects&#39; methods :func:`store`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dic</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Jinit&#39;</span> <span class="p">:</span> <span class="n">TTapp</span><span class="o">.</span><span class="n">ttcross_Jinit</span><span class="p">,</span>
+           <span class="s1">&#39;rs&#39;</span><span class="p">:</span> <span class="n">TTapp</span><span class="o">.</span><span class="n">ttcross_rs</span><span class="p">,</span>
+           <span class="s1">&#39;Js&#39;</span><span class="p">:</span> <span class="n">TTapp</span><span class="o">.</span><span class="n">ttcross_Js</span><span class="p">,</span>
+           <span class="s1">&#39;Is&#39;</span><span class="p">:</span> <span class="n">TTapp</span><span class="o">.</span><span class="n">ttcross_Is</span><span class="p">,</span>
+           <span class="s1">&#39;Js_last&#39;</span><span class="p">:</span> <span class="n">TTapp</span><span class="o">.</span><span class="n">ttcross_Js_last</span><span class="p">,</span>
+           <span class="s1">&#39;ltor_fiber_lists&#39;</span><span class="p">:</span> <span class="n">TTapp</span><span class="o">.</span><span class="n">ltor_fiber_lists</span><span class="p">,</span>
+           <span class="s1">&#39;rtol_fiber_lists&#39;</span><span class="p">:</span> <span class="n">TTapp</span><span class="o">.</span><span class="n">rtol_fiber_lists</span><span class="p">,</span>
+           <span class="s1">&#39;X&#39;</span> <span class="p">:</span> <span class="n">TW</span><span class="o">.</span><span class="n">get_X</span><span class="p">(),</span>
+           <span class="s1">&#39;params&#39;</span> <span class="p">:</span> <span class="n">TW</span><span class="o">.</span><span class="n">get_params</span><span class="p">(),</span>
+           <span class="s1">&#39;data&#39;</span> <span class="p">:</span> <span class="n">TW</span><span class="o">.</span><span class="n">get_data</span><span class="p">()}</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="c1"># If the file already exists, make a safety copy</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="o">+</span><span class="s2">&quot;.old&quot;</span><span class="p">)</span>
+    <span class="n">ff</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+    <span class="n">pkl</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span><span class="n">ff</span><span class="p">)</span>
+    <span class="n">ff</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013-2015, Daniele Bigoni.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

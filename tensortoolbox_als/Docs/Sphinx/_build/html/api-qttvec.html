@@ -1,0 +1,296 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Quantics Tensor Train Vectors &#8212; TensorToolbox 0.3.3 documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quantics Tensor Train Matrices" href="api-qttmat.html" />
+    <link rel="prev" title="Tensor Train Matrices" href="api-ttmat.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api-qttmat.html" title="Quantics Tensor Train Matrices"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="api-ttmat.html" title="Tensor Train Matrices"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" accesskey="U">API</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="api-ttmat.html"
+                        title="previous chapter">Tensor Train Matrices</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="api-qttmat.html"
+                        title="next chapter">Quantics Tensor Train Matrices</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api-qttvec.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-TensorToolbox">
+<span id="quantics-tensor-train-vectors"></span><h1>Quantics Tensor Train Vectors<a class="headerlink" href="#module-TensorToolbox" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="TensorToolbox.core.QTTvec">
+<em class="property">class </em><code class="descclassname">TensorToolbox.core.</code><code class="descname">QTTvec</code><span class="sig-paren">(</span><em>A</em>, <em>base=2</em>, <em>global_shape=None</em>, <em>store_location=''</em>, <em>store_object=None</em>, <em>store_freq=1</em>, <em>store_overwrite=False</em>, <em>multidim_point=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor of multidimensional tensor in Quantics Tensor Train format <a class="reference internal" href="zrefs.html#khoromskij2010" id="id1">[6]</a><a class="reference internal" href="zrefs.html#khoromskij2011" id="id2">[7]</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>A</strong> (<em>ndarray</em><em>,</em><a class="reference internal" href="api-tw.html#TensorToolbox.core.TensorWrapper" title="TensorToolbox.core.TensorWrapper"><em>TensorWrapper</em></a><em>,</em><em>TT</em>) – Available input formats are full tensor in numpy.ndarray, Tensor Wrapper, Tensor Train structure (list of cores)</li>
+<li><strong>base</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – base selected to do the folding</li>
+<li><strong>global_shape</strong> (<em>list</em>) – Argument to be provided if <code class="docutils literal"><span class="pre">A</span></code> is the list of cores of a TT format.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="TensorToolbox.core.QTTvec.build">
+<code class="descname">build</code><span class="sig-paren">(</span><em>eps=1e-10</em>, <em>method='svd'</em>, <em>rs=None</em>, <em>fix_rank=False</em>, <em>Jinit=None</em>, <em>delta=0.0001</em>, <em>maxit=100</em>, <em>mv_eps=1e-06</em>, <em>mv_maxit=100</em>, <em>max_ranks=None</em>, <em>kickrank=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Common interface for the construction of the approximation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – [default == 1e-10] For method==’svd’: precision with which to approximate the input tensor. For method==’ttcross’: TT-rounding tolerance for rank-check.</li>
+<li><strong>method</strong> (<a class="reference external" href="https://docs.python.org/2/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) – ‘svd’ use singular value decomposition to construct the TT representation <a class="reference internal" href="zrefs.html#oseledets2011" id="id3">[1]</a>, ‘ttcross’ use low rank skeleton approximation to construct the TT representation <a class="reference internal" href="zrefs.html#oseledets2010" id="id4">[2]</a>, ‘ttdmrg’ uses Tensor Train Renormalization Cross to construct the TT representation <a class="reference internal" href="zrefs.html#savostyanov2011" id="id5">[3]</a><a class="reference internal" href="zrefs.html#savostyanov2013" id="id6">[4]</a>, ‘ttdmrgcross’ uses ‘ttdmrg’ with ‘ttcross’ approximation of supercores</li>
+<li><strong>rs</strong> (<em>list</em>) – list of integer ranks of different cores. If <code class="docutils literal"><span class="pre">None</span></code> then the incremental TTcross approach will be used. (method==’ttcross’)</li>
+<li><strong>fix_rank</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – determines whether the rank is allowed to be increased (method==’ttcross’)</li>
+<li><strong>Jinit</strong> (<em>list</em>) – list of list of integers containing the r starting columns in the lowrankapprox routine for each core. If <code class="docutils literal"><span class="pre">None</span></code> then pick them randomly. (method==’ttcross’)</li>
+<li><strong>delta</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – accuracy parameter in the TT-cross routine (method==’ttcross’). It is the relative error in Frobenious norm between two successive iterations.</li>
+<li><strong>maxit</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – maximum number of iterations in the lowrankapprox routine (method==’ttcross’)</li>
+<li><strong>mv_eps</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – accuracy parameter for each usage of the maxvol algorithm (method==’ttcross’)</li>
+<li><strong>mv_maxit</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – maximum number of iterations in the maxvol routine (method==’ttcross’)</li>
+<li><strong>fix_rank</strong> – Whether the rank is allowed to increase</li>
+<li><strong>max_ranks</strong> (<em>list</em>) – Maximum ranks to be used to limit the trunaction rank due to <code class="docutils literal"><span class="pre">eps</span></code>. The first and last elements of the list must be <code class="docutils literal"><span class="pre">1</span></code>, e.g. <code class="docutils literal"><span class="pre">[1,...,1]</span></code>. Default: <code class="docutils literal"><span class="pre">None</span></code>.</li>
+<li><strong>kickrank</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – rank overshooting for ‘ttdmrg’</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.QTTvec.get_data_F_norm">
+<code class="descname">get_data_F_norm</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec.get_data_F_norm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec.get_data_F_norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to get the Frobeniuos norm of the underlying data.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.QTTvec.get_folded_shape">
+<code class="descname">get_folded_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec.get_folded_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec.get_folded_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the shape of the folded tensor (list of lists)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.QTTvec.get_global_ndim">
+<code class="descname">get_global_ndim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec.get_global_ndim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec.get_global_ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the ndim of the original tensor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.QTTvec.get_global_shape">
+<code class="descname">get_global_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec.get_global_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec.get_global_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the shape of the original tensor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.QTTvec.get_q_shape">
+<code class="descname">get_q_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec.get_q_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec.get_q_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the shape of the base “base” shape of the tensor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.QTTvec.get_ttdmrg_real_subtensor">
+<code class="descname">get_ttdmrg_real_subtensor</code><span class="sig-paren">(</span><em>C</em>, <em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec.get_ttdmrg_real_subtensor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec.get_ttdmrg_real_subtensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to get the Frobeniuos norm of a subtensor of the underlying data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>C</strong> (<em>np.ndarray</em>) – Extracted 4-d tensor with shape len(l_idx) x n x m x len(r_idx)</li>
+<li><strong>idxs</strong> (<em>list</em>) – List of tuples of the form (l_idx, slice, slice, r_idx)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return np.ndarray Creal:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">1-d array containing the filtered values belonging to the real tensor</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.QTTvec.interpolate">
+<code class="descname">interpolate</code><span class="sig-paren">(</span><em>Ms=None</em>, <em>eps=1e-08</em>, <em>is_sparse=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec.interpolate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec.interpolate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolates the values of the QTTvec at arbitrary points, using the interpolation matrices <code class="docutils literal"><span class="pre">Ms</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Ms</strong> (<em>list</em>) – list of interpolation matrices for each dimension. Ms[i].shape[1] == self.shape()[i]</li>
+<li><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – tolerance with which to perform the rounding after interpolation</li>
+<li><strong>is_sparse</strong> (<em>list</em>) – is_sparse[i] is a bool indicating whether Ms[i] is sparse or not. If ‘None’ all matrices are non sparse [sparsity is not exploited]</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">QTTvec interpolation</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#TensorToolbox.core.QTTvec" title="TensorToolbox.core.QTTvec">QTTvec</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">DABISpectralToolbox</span> <span class="k">import</span> <span class="n">DABISpectral1D</span> <span class="k">as</span> <span class="n">S1D</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Ms</span> <span class="o">=</span> <span class="p">[</span> <span class="n">S1D</span><span class="o">.</span><span class="n">LinearInterpolationMatrix</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">XI</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_sparse</span> <span class="o">=</span> <span class="p">[</span><span class="kc">True</span><span class="p">]</span><span class="o">*</span><span class="n">d</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TTapproxI</span> <span class="o">=</span> <span class="n">TTapprox</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">Ms</span><span class="p">,</span><span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span><span class="n">is_sparse</span><span class="o">=</span><span class="n">is_sparse</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.QTTvec.project">
+<code class="descname">project</code><span class="sig-paren">(</span><em>Vs=None</em>, <em>Ws=None</em>, <em>eps=1e-08</em>, <em>is_sparse=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec.project"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec.project" title="Permalink to this definition">¶</a></dt>
+<dd><p>Project the QTTvec onto a set of basis provided, using the Generalized Vandermonde matrices <code class="docutils literal"><span class="pre">Vs</span></code> and weights <code class="docutils literal"><span class="pre">Ws</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Vs</strong> (<em>list</em>) – list of generalized Vandermonde matrices for each dimension. Ms[i].shape[1] == self.shape()[i]</li>
+<li><strong>Ws</strong> (<em>list</em>) – list of weights for each dimension. Ws[i].shape[0] == self.shape()[i]</li>
+<li><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – tolerance with which to perform the rounding after interpolation</li>
+<li><strong>is_sparse</strong> (<em>list</em>) – is_sparse[i] is a bool indicating whether Ms[i] is sparse or not. If ‘None’ all matrices are non sparse [sparsity is not exploited]</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">TTvec containting the Fourier coefficients</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="api-ttvec.html#TensorToolbox.core.TTvec" title="TensorToolbox.core.TTvec">TTvec</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">DABISpectralToolbox</span> <span class="k">import</span> <span class="n">DABISpectral1D</span> <span class="k">as</span> <span class="n">S1D</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">P</span> <span class="o">=</span> <span class="n">S1D</span><span class="o">.</span><span class="n">Poly1D</span><span class="p">(</span><span class="n">S1D</span><span class="o">.</span><span class="n">JACOBI</span><span class="p">,(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">,</span><span class="n">w</span> <span class="o">=</span> <span class="n">S1D</span><span class="o">.</span><span class="n">Quadrature</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="n">S1D</span><span class="o">.</span><span class="n">GAUSS</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">*</span><span class="n">d</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">W</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span><span class="p">]</span><span class="o">*</span><span class="n">d</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Compute here the TTapprox at points X</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TTapprox</span> <span class="o">=</span> <span class="n">QTTvec</span><span class="p">(</span><span class="o">....</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Project</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Vs</span> <span class="o">=</span> <span class="p">[</span> <span class="n">P</span><span class="o">.</span><span class="n">GradVandermonde1D</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">norm</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="p">]</span> <span class="o">*</span> <span class="n">d</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_sparse</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span><span class="o">*</span><span class="n">d</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TTfourier</span> <span class="o">=</span> <span class="n">TTapprox</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="n">Vs</span><span class="p">,</span><span class="n">W</span><span class="p">,</span><span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span><span class="n">is_sparse</span><span class="o">=</span><span class="n">is_sparse</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">NOT WORKING! (Transform first to TTvec)</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.QTTvec.q_to_global">
+<code class="descname">q_to_global</code><span class="sig-paren">(</span><em>idxs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/QuanticsTensorTrainVec.html#QTTvec.q_to_global"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.QTTvec.q_to_global" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a non-injective function from the q indices to the global indices</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api-qttmat.html" title="Quantics Tensor Train Matrices"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="api-ttmat.html" title="Tensor Train Matrices"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" >API</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013-2015, Daniele Bigoni.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

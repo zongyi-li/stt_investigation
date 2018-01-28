@@ -1,0 +1,750 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>TensorToolbox.multilinalg.multilinalg &#8212; TensorToolbox 0.3.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for TensorToolbox.multilinalg.multilinalg</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1"># This file is part of TensorToolbox.</span>
+<span class="c1">#</span>
+<span class="c1"># TensorToolbox is free software: you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the LGNU Lesser General Public License as published by</span>
+<span class="c1"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># TensorToolbox is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># LGNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the LGNU Lesser General Public License</span>
+<span class="c1"># along with TensorToolbox.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c1">#</span>
+<span class="c1"># DTU UQ Library</span>
+<span class="c1"># Copyright (C) 2014-2016 The Technical University of Denmark</span>
+<span class="c1"># Scientific Computing Section</span>
+<span class="c1"># Department of Applied Mathematics and Computer Science</span>
+<span class="c1">#</span>
+<span class="c1"># Author: Daniele Bigoni</span>
+<span class="c1">#</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;add&#39;</span><span class="p">,</span><span class="s1">&#39;mul&#39;</span><span class="p">,</span><span class="s1">&#39;dot&#39;</span><span class="p">,</span><span class="s1">&#39;kron&#39;</span><span class="p">,</span><span class="s1">&#39;contraction&#39;</span><span class="p">,</span><span class="s1">&#39;norm&#39;</span><span class="p">,</span><span class="s1">&#39;sd&#39;</span><span class="p">,</span><span class="s1">&#39;cg&#39;</span><span class="p">,</span><span class="s1">&#39;bicgstab&#39;</span><span class="p">,</span><span class="s1">&#39;gmres&#39;</span><span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="k">as</span> <span class="nn">npla</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">linalg</span> <span class="k">as</span> <span class="n">scla</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">sparse</span> <span class="k">as</span> <span class="n">scsp</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="k">import</span> <span class="n">linalg</span> <span class="k">as</span> <span class="n">spla</span>
+
+<span class="c1">###########################################</span>
+<span class="c1"># External Multi Linear Algebra operations</span>
+<span class="c1">###########################################</span>
+
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">B</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">A</span> <span class="o">+</span> <span class="n">B</span>
+    
+
+<div class="viewcode-block" id="mul"><a class="viewcode-back" href="../../../api-multilinalg.html#TensorToolbox.multilinalg.mul">[docs]</a><span class="k">def</span> <span class="nf">mul</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">B</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    * If A,B are TTvec/TTmat -&gt; Hadamard product of two TT tensors</span>
+<span class="sd">    * If A TTvec/TTmat and B scalar -&gt; multiplication by scalar</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">A</span> <span class="o">*</span> <span class="n">B</span></div>
+
+<span class="k">def</span> <span class="nf">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">B</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">B</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="c1"># tensor-tensor dot product (np.tensordot)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">B</span><span class="p">,(</span><span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">ndim</span><span class="p">),</span><span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">ndim</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">A</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+
+<div class="viewcode-block" id="kron"><a class="viewcode-back" href="../../../api-multilinalg.html#TensorToolbox.multilinalg.kron">[docs]</a><span class="k">def</span> <span class="nf">kron</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">B</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Kron product between two tensors in TT format.</span>
+<span class="sd">    Complexity: O(1)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">TTvec</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">A</span><span class="o">.</span><span class="n">init</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">B</span><span class="o">.</span><span class="n">init</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.kron: TT not initialized correctly&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="n">B</span><span class="p">):</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.kron: conflicting input types&quot;</span><span class="p">)</span>
+    
+    <span class="n">C</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">C</span><span class="o">.</span><span class="n">kron</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">C</span></div>
+
+<div class="viewcode-block" id="contraction"><a class="viewcode-back" href="../../../api-multilinalg.html#TensorToolbox.multilinalg.contraction">[docs]</a><span class="k">def</span> <span class="nf">contraction</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">U</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Multidimensional contraction of tensor A with vectors in list U.</span>
+<span class="sd">    Complexity: O(dnr^2)</span>
+
+<span class="sd">    Syntax:</span>
+<span class="sd">        ``W = contraction(A,U)``</span>
+
+<span class="sd">    :param A: Tensor in some form</span>
+<span class="sd">    :param U: list of vectors of dimensions n_k for performing the contraction</span>
+<span class="sd">    :type list U: list of vectors with dimension n_k (where n_k is the size of each tensor dimension)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">TTvec</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">TTvec</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">A</span><span class="o">.</span><span class="n">init</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.contraction: TT not initialized correctly&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check consistency</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">U</span><span class="p">):</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.contraction: len(U) is not consistent with the number of cores of A&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">U</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.TT.contraction: len(U[</span><span class="si">%d</span><span class="s2">]) is not consistent with the size of dimension </span><span class="si">%d</span><span class="s2"> of A&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">))</span>
+
+        <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">)):</span>
+            <span class="n">Gamma_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span><span class="mi">0</span><span class="p">,:]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">Gamma_i</span> <span class="o">+=</span> <span class="n">U</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">i</span><span class="p">][:,</span><span class="n">j</span><span class="p">,:]</span>
+            <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">W</span><span class="p">,</span><span class="n">Gamma_i</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">W</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.contraction: contraction not implemented for the input types&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="norm"><a class="viewcode-back" href="../../../api-multilinalg.html#TensorToolbox.multilinalg.norm">[docs]</a><span class="k">def</span> <span class="nf">norm</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="nb">ord</span><span class="o">=</span><span class="s1">&#39;fro&#39;</span><span class="p">,</span><span class="n">round_eps</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span><span class="n">eps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">maxit</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">pow_guess</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">info</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the norm of tensor A.</span>
+
+<span class="sd">    Syntax:</span>
+<span class="sd">        ``w = norm(A,[ord])``</span>
+
+<span class="sd">    :param A: Tensor in some form</span>
+<span class="sd">    :param ord: Specifies the type of norm that needs to be computed. Available norms are: the Frobenius norm: &#39;fro&#39;. If the input tensor is a WeightedTensorTrainVec, then this takes the Frobenious norm of the weighted TT, i.e. the continuos norm defined by the weights.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">TTvec</span><span class="p">,</span> <span class="n">WTTvec</span><span class="p">,</span> <span class="n">TTmat</span>
+    
+    <span class="k">if</span> <span class="nb">ord</span> <span class="o">==</span> <span class="s1">&#39;fro&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">WTTvec</span><span class="p">):</span>
+            <span class="c1"># For the Frobenius norm in general we need to make the right to left rounding part</span>
+            <span class="c1"># and store the Frobenius norms of the R matrices (????)</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">)</span>
+            <span class="n">ns</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
+            <span class="c1"># Right to left orthogonalization</span>
+            <span class="n">nrm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">C</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">d</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># Computation of rq</span>
+                <span class="n">alphakm1</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">betak</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">Gk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">C</span><span class="p">,(</span><span class="n">alphakm1</span><span class="p">,</span><span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">betak</span><span class="p">))</span>
+                <span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="n">Q</span><span class="p">)</span> <span class="o">=</span> <span class="n">scla</span><span class="o">.</span><span class="n">rq</span><span class="p">(</span><span class="n">Gk</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;economic&#39;</span><span class="p">)</span> <span class="c1"># Only R is needed</span>
+                <span class="n">betakm1</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">nrm</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">npla</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
+                <span class="n">R</span> <span class="o">=</span> <span class="n">R</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">nrm</span><span class="p">[</span><span class="n">k</span><span class="p">],</span><span class="mf">1e-300</span><span class="p">)</span>
+                <span class="c1"># 3-mode product G[k-1] x_3 R</span>
+                <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">],(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+                <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">C</span><span class="p">,</span><span class="n">R</span><span class="p">),(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">betakm1</span><span class="p">))</span>
+            <span class="n">nrm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">npla</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">nrm</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">WTTvec</span><span class="p">):</span>
+            <span class="c1"># Take the Frobenious norm of a weighted tensor</span>
+            <span class="n">weights_applied</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">A</span><span class="o">.</span><span class="n">is_weighted</span><span class="p">():</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">apply_weights</span><span class="p">()</span>
+                <span class="n">weights_applied</span> <span class="o">=</span> <span class="kc">True</span>
+            
+            <span class="c1"># For the Frobenius norm in general we need to make the right to left rounding part</span>
+            <span class="c1"># and store the Frobenius norms of the R matrices (????)</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">)</span>
+            <span class="n">ns</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
+            <span class="c1"># Right to left orthogonalization</span>
+            <span class="n">nrm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">C</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">d</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># Computation of rq</span>
+                <span class="n">alphakm1</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">betak</span> <span class="o">=</span> <span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">Gk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">C</span><span class="p">,(</span><span class="n">alphakm1</span><span class="p">,</span><span class="n">C</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">betak</span><span class="p">))</span>
+                <span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="n">Q</span><span class="p">)</span> <span class="o">=</span> <span class="n">scla</span><span class="o">.</span><span class="n">rq</span><span class="p">(</span><span class="n">Gk</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;economic&#39;</span><span class="p">)</span> <span class="c1"># Only R is needed</span>
+                <span class="n">betakm1</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">nrm</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">npla</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
+                <span class="n">R</span> <span class="o">=</span> <span class="n">R</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">nrm</span><span class="p">[</span><span class="n">k</span><span class="p">],</span><span class="mf">1e-300</span><span class="p">)</span>
+                <span class="c1"># 3-mode product G[k-1] x_3 R</span>
+                <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">],(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+                <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">C</span><span class="p">,</span><span class="n">R</span><span class="p">),(</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">A</span><span class="o">.</span><span class="n">TT</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">betakm1</span><span class="p">))</span>
+            <span class="n">nrm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">npla</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">C</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">weights_applied</span><span class="p">:</span>
+                <span class="n">A</span><span class="o">.</span><span class="n">remove_weights</span><span class="p">()</span>
+            
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">nrm</span><span class="p">)</span>            
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A</span><span class="o">**</span><span class="mf">2.</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.norm: Frobenius norm not implemented for the input types&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">ord</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">randvec</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">TTmat</span><span class="p">):</span>
+            <span class="c1"># For vectors 2-norm == Frob norm</span>
+            <span class="k">return</span> <span class="n">norm</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">TTmat</span><span class="p">):</span>
+            <span class="c1"># 2-norm of matrix</span>
+            <span class="c1"># Use power method to determine the maximum eigenvalue of the operator </span>
+            <span class="c1"># within a certain accuracy. (This works only if lmb_1 has multiplicity 1)</span>
+            <span class="k">if</span> <span class="n">pow_guess</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Use randomly generated starting vector guess with dimensions A.ncols</span>
+                <span class="n">pow_guess</span> <span class="o">=</span> <span class="n">randvec</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">()),</span><span class="n">A</span><span class="o">.</span><span class="n">ncols</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span> <span class="p">(</span><span class="n">pow_guess</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pow_guess</span><span class="p">,</span><span class="n">Tmat</span><span class="p">):</span>
+                <span class="c1"># Check consistency</span>
+                <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="n">pow_guess</span><span class="o">.</span><span class="n">shape</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">ncols</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.norm: Initial guess vector provided is in TTvec format, but the shape does not agree with A.ncols&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.norm: Initial guess vector provided is not in TTvec format&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Power iteration method</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">pow_guess</span>
+            <span class="n">lmb</span> <span class="o">=</span> <span class="mf">1.</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">norm</span><span class="p">(</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">q</span><span class="p">)</span> <span class="o">-</span> <span class="n">q</span> <span class="o">*</span> <span class="n">lmb</span> <span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">eps</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">maxit</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">q</span><span class="p">)</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">round_eps</span><span class="p">)</span>
+                <span class="n">q</span> <span class="o">*=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">norm</span><span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">lmb</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">q</span><span class="p">))</span>
+            
+            <span class="k">return</span> <span class="n">lmb</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.norm: 2-norm not implemented for the input types&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.norm: norm not implemented for the input types&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1">###########################################</span>
+<span class="c1"># Iterative solvers of linear equations</span>
+<span class="c1">###########################################</span>
+
+<div class="viewcode-block" id="sd"><a class="viewcode-back" href="../../../api-multilinalg.html#TensorToolbox.multilinalg.sd">[docs]</a><span class="k">def</span> <span class="nf">sd</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span><span class="n">maxit</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">eps_round</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span><span class="n">ext_info</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Solves the system :math:`Ax=b` using the Steepest Descent method in Tensor Train format.</span>
+<span class="sd">    </span>
+<span class="sd">    :param TTmat A: Tensor train matrix</span>
+<span class="sd">    :param TTvec/ndarray b: Right hand side</span>
+<span class="sd">    </span>
+<span class="sd">    :param TTvec/ndarray x0: [default == :py:func:`TensorToolbox.core.zerosvec`] initial guess of solution ``x``</span>
+<span class="sd">    :param float eps: [default == 1e-8] stop criteria</span>
+<span class="sd">    :param int maxit: [default == 1000] maximum number of iterations</span>
+<span class="sd">    :param float eps_round: [default == 1e-10] accuracy for Tensor Train rounding operations</span>
+<span class="sd">    :param bool ext_info: [default == False] whehter of not to have additional info returned</span>
+
+<span class="sd">    :return: tuple :py:data:`(x,conv,info)`</span>
+<span class="sd">       </span>
+<span class="sd">       * :py:data:`x` (TTvec): solution of the linear system if converged or last iterate if not converged</span>
+<span class="sd">       * :py:data:`conv` (bool): True -&gt; converged, False -&gt; Not converged / Zero Inner Product exeception</span>
+<span class="sd">       * :py:data:`info` (dict): ``iter`` -&gt; total number of iterations; ``r`` -&gt; last residual in TT format; ``res`` -&gt; residual history</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+    <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> </span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(name)s</span><span class="s2">: </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+                                  <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+    <span class="n">ch</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">TTvec</span><span class="p">,</span> <span class="n">TTmat</span><span class="p">,</span> <span class="n">zerosvec</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">TTmat</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">A</span><span class="o">.</span><span class="n">init</span> <span class="p">:</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: TT not initialized correctly&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">TTmat</span><span class="p">):</span> <span class="n">is_tt</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span> <span class="n">is_tt</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: invalid type of b&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span> 
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">b</span><span class="o">.</span><span class="n">init</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: TT not initialized correctly&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">x0</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span>
+                <span class="n">x0</span> <span class="o">=</span> <span class="n">zerosvec</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">()),</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span> <span class="o">!=</span> <span class="n">x0</span><span class="o">.</span><span class="n">shape</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: Initial guess must be in TT format and have the same shape of b&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">x0</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: Initial guess must be in ndarray format and have the same shape of b&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Steepest descent init</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x0</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">x</span><span class="p">))</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">dot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">r</span><span class="p">)]</span>
+        <span class="n">delta_0</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">maxit</span> <span class="ow">and</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="o">**</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">delta_0</span><span class="p">:</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">r</span><span class="p">)</span><span class="o">/</span><span class="n">dot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">r</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">+=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">alpha</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">-=</span> <span class="n">p</span> <span class="o">*</span> <span class="n">alpha</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">TTvec</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;SD: err=</span><span class="si">%e</span><span class="s2"> ranks=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">x</span><span class="o">.</span><span class="n">ranks</span><span class="p">()))</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;SD: err=</span><span class="si">%e</span><span class="s2"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">conv</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">maxit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ext_info</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;iter&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                    <span class="s1">&#39;r&#39;</span>   <span class="p">:</span> <span class="n">r</span><span class="p">,</span>
+                    <span class="s1">&#39;res&#39;</span> <span class="p">:</span> <span class="n">res</span><span class="p">}</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">,</span><span class="n">info</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">)</span></div>
+
+        
+
+<div class="viewcode-block" id="cg"><a class="viewcode-back" href="../../../api-multilinalg.html#TensorToolbox.multilinalg.cg">[docs]</a><span class="k">def</span> <span class="nf">cg</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span><span class="n">maxit</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">eps_round</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span><span class="n">ext_info</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Solves the system :math:`Ax=b` using the Conjugate Gradient method in Tensor Train format.</span>
+<span class="sd">    </span>
+<span class="sd">    :param TTmat A: Tensor train matrix</span>
+<span class="sd">    :param TTvec/ndarray b: Right hand side</span>
+<span class="sd">    </span>
+<span class="sd">    :param TTvec/ndarray x0: [default == :py:func:`TensorToolbox.core.zerosvec`] initial guess of solution ``x``</span>
+<span class="sd">    :param float eps: [default == 1e-8] stop criteria for Bi-CGSTAB iterations</span>
+<span class="sd">    :param int maxit: [default == 1000] maximum number of iterations for Bi-CGSTAB</span>
+<span class="sd">    :param float eps_round: [default == 1e-10] accuracy for Tensor Train rounding operations</span>
+<span class="sd">    :param bool ext_info: [default == False] whehter of not to have additional info returned</span>
+
+<span class="sd">    :return: tuple :py:data:`(x,conv,info)`</span>
+<span class="sd">       </span>
+<span class="sd">       * :py:data:`x` (TTvec): solution of the linear system if converged or last iterate if not converged</span>
+<span class="sd">       * :py:data:`conv` (bool): True -&gt; converged, False -&gt; Not converged / Zero Inner Product exeception</span>
+<span class="sd">       * :py:data:`info` (dict): ``iter`` -&gt; total number of iterations; ``r`` -&gt; last residual in TT format; ``res`` -&gt; residual history</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+    <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> </span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(name)s</span><span class="s2">: </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+                                  <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+    <span class="n">ch</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">TTvec</span><span class="p">,</span> <span class="n">TTmat</span><span class="p">,</span> <span class="n">zerosvec</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">TTmat</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">A</span><span class="o">.</span><span class="n">init</span> <span class="p">:</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: TT not initialized correctly&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">TTmat</span><span class="p">):</span> <span class="n">is_tt</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span> <span class="n">is_tt</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: invalid type of b&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span> 
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">b</span><span class="o">.</span><span class="n">init</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: TT not initialized correctly&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">x0</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span>
+                <span class="n">x0</span> <span class="o">=</span> <span class="n">zerosvec</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">()),</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span> <span class="o">!=</span> <span class="n">x0</span><span class="o">.</span><span class="n">shape</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: Initial guess must be in TT format and have the same shape of b&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">x0</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: Initial guess must be in ndarray format and have the same shape of b&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># CG init</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x0</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">r</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">dot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">r</span><span class="p">)]</span>
+        <span class="n">delta_0</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">maxit</span> <span class="ow">and</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">:</span> <span class="c1"># * delta_0:</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">d</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">dot</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">q</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">+=</span> <span class="n">d</span> <span class="o">*</span> <span class="n">alpha</span>
+            <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">x</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">-=</span> <span class="n">q</span> <span class="o">*</span> <span class="n">alpha</span>
+                <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+            <span class="n">delta_old</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">dot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">r</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">beta</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">delta_old</span>
+
+            <span class="n">d</span> <span class="o">*=</span> <span class="n">beta</span>
+            <span class="n">d</span> <span class="o">+=</span> <span class="n">r</span>
+            <span class="k">if</span> <span class="n">is_tt</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">TTvec</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CG: err=</span><span class="si">%e</span><span class="s2"> ranks=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">x</span><span class="o">.</span><span class="n">ranks</span><span class="p">()</span> <span class="p">))</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CG: err=</span><span class="si">%e</span><span class="s2"> &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="n">conv</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">maxit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ext_info</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;iter&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                    <span class="s1">&#39;r&#39;</span>   <span class="p">:</span> <span class="n">r</span><span class="p">,</span>
+                    <span class="s1">&#39;res&#39;</span> <span class="p">:</span> <span class="n">res</span><span class="p">}</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">,</span><span class="n">info</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">)</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: Conjugate gradient not implemented for the input types&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="bicgstab"><a class="viewcode-back" href="../../../api-multilinalg.html#TensorToolbox.multilinalg.bicgstab">[docs]</a><span class="k">def</span> <span class="nf">bicgstab</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span><span class="n">maxit</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">eps_round</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span><span class="n">ext_info</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Solves the system :math:`Ax=b` using the Bi-Conjugate Gradient Stabilized method using Tensor Train format.</span>
+<span class="sd">    </span>
+<span class="sd">    :param TTmat A: Tensor train matrix</span>
+<span class="sd">    :param TTvec b: Right hand side</span>
+<span class="sd">    </span>
+<span class="sd">    :param TTvec x0: [default == :py:func:`TensorToolbox.core.zerosvec`] initial guess of solution ``x``</span>
+<span class="sd">    :param float eps: [default == 1e-8] stop criteria for Bi-CGSTAB iterations</span>
+<span class="sd">    :param int maxit: [default == 1000] maximum number of iterations for Bi-CGSTAB</span>
+<span class="sd">    :param float eps_round: [default == 1e-10] accuracy for Tensor Train rounding operations</span>
+<span class="sd">    :param bool ext_info: [default == False] whehter of not to have additional info returned</span>
+
+<span class="sd">    :return: tuple :py:data:`(x,conv,info)`</span>
+<span class="sd">       </span>
+<span class="sd">       * :py:data:`x` (TTvec): solution of the linear system if converged or last iterate if not converged</span>
+<span class="sd">       * :py:data:`conv` (bool): True -&gt; converged, False -&gt; Not converged / Zero Inner Product exeception</span>
+<span class="sd">       * :py:data:`info` (dict): ``iter`` -&gt; total number of iterations; ``r`` -&gt; last residual in TT format; ``rho`` -&gt; last value of dot(r0,r) must be bigger than np.spacing(1); ``r0v`` -&gt; last value of dot(r0,v) must be bigger than np.spacing(1)</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+    <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> </span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(name)s</span><span class="s2">: </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+                                  <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+    <span class="n">ch</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">TTvec</span>
+    <span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">zerosvec</span>
+    <span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">TTmat</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">A</span><span class="o">.</span><span class="n">init</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">b</span><span class="o">.</span><span class="n">init</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: TT not initialized correctly&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">TTmat</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">TTmat</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: Conjugate gradient not implemented for the input types&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">x0</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">zerosvec</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">()),</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">())</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span> <span class="o">!=</span> <span class="n">x0</span><span class="o">.</span><span class="n">shape</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: Initial guess must be in TT format and have the same shape of b&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Bi-CGSTAB init</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x0</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">x</span><span class="p">))</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+    <span class="n">r0</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">delta_0</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">delta_new</span> <span class="o">=</span> <span class="n">delta_0</span>
+    <span class="n">rho_old</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">omega</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">zerosvec</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">()),</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">())</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">zerosvec</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">()),</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">())</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">maxit</span> <span class="ow">and</span> <span class="n">delta_new</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="o">**</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">delta_0</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">rho_new</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span><span class="n">r</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">rho_new</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span> <span class="c1"># Break computations</span>
+            <span class="n">conv</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">ext_info</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;iter&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                        <span class="s1">&#39;r&#39;</span><span class="p">:</span> <span class="n">r</span><span class="p">,</span>
+                        <span class="s1">&#39;rho&#39;</span><span class="p">:</span> <span class="n">rho_new</span><span class="p">,</span>
+                        <span class="s1">&#39;r0v&#39;</span><span class="p">:</span> <span class="n">r0v</span><span class="p">}</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">,</span><span class="n">info</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">)</span>
+
+        <span class="n">beta</span> <span class="o">=</span> <span class="p">(</span><span class="n">rho_new</span><span class="o">/</span><span class="n">rho_old</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">alpha</span><span class="o">/</span><span class="n">omega</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">r</span> <span class="o">+</span> <span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="n">v</span> <span class="o">*</span> <span class="n">omega</span><span class="p">)</span> <span class="o">*</span> <span class="n">beta</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+        <span class="n">r0v</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span><span class="n">v</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">r0v</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span> <span class="c1"># Break computations</span>
+            <span class="n">conv</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">ext_info</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;iter&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                        <span class="s1">&#39;r&#39;</span><span class="p">:</span> <span class="n">r</span><span class="p">,</span>
+                        <span class="s1">&#39;rho&#39;</span><span class="p">:</span> <span class="n">rho_new</span><span class="p">,</span>
+                        <span class="s1">&#39;r0v&#39;</span><span class="p">:</span> <span class="n">r0v</span><span class="p">}</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">,</span><span class="n">info</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">)</span>
+
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">rho_new</span> <span class="o">/</span> <span class="n">r0v</span>   
+        <span class="n">s</span> <span class="o">=</span> <span class="n">r</span> <span class="o">-</span> <span class="n">v</span> <span class="o">*</span> <span class="n">alpha</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">norm</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">eps</span><span class="o">**</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">delta_0</span><span class="p">:</span> <span class="c1"># Convergence already reached, update and break loop</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">p</span> <span class="o">*</span> <span class="n">alpha</span>
+            <span class="n">conv</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">ext_info</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;iter&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                        <span class="s1">&#39;s&#39;</span><span class="p">:</span> <span class="n">r</span><span class="p">,</span>
+                        <span class="s1">&#39;rho&#39;</span><span class="p">:</span> <span class="n">rho_new</span><span class="p">,</span>
+                        <span class="s1">&#39;r0v&#39;</span><span class="p">:</span> <span class="n">r0v</span><span class="p">}</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">,</span><span class="n">info</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+        <span class="n">omega</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">s</span><span class="p">)</span><span class="o">/</span><span class="n">norm</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">p</span> <span class="o">*</span> <span class="n">alpha</span> <span class="o">+</span>  <span class="n">s</span> <span class="o">*</span> <span class="n">omega</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+        <span class="c1"># The exit was here, but we can postpone it ...</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">s</span> <span class="o">-</span> <span class="n">t</span> <span class="o">*</span> <span class="n">omega</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+
+        <span class="c1"># Update new -&gt; old</span>
+        <span class="n">delta_new</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">rho_old</span> <span class="o">=</span> <span class="n">rho_new</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Bi-CGSTAB: err=</span><span class="si">%e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">delta_new</span><span class="p">))</span>
+
+    <span class="n">conv</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">maxit</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ext_info</span><span class="p">:</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;iter&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+                <span class="s1">&#39;r&#39;</span><span class="p">:</span> <span class="n">r</span><span class="p">,</span>
+                <span class="s1">&#39;rho&#39;</span><span class="p">:</span> <span class="n">rho_new</span><span class="p">,</span>
+                <span class="s1">&#39;r0v&#39;</span><span class="p">:</span> <span class="n">r0v</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">,</span><span class="n">info</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="gmres"><a class="viewcode-back" href="../../../api-multilinalg.html#TensorToolbox.multilinalg.gmres">[docs]</a><span class="k">def</span> <span class="nf">gmres</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">x0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">eps</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">,</span><span class="n">maxit</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">restart</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">eps_round</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span><span class="n">ext_info</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Solves the system :math:`Ax=b` using the Generalized Minimum Residual method with Modified Gram-Schmidt iterations using Tensor Train format.</span>
+<span class="sd">    </span>
+<span class="sd">    :param TTmat A: Tensor train matrix</span>
+<span class="sd">    :param TTvec b: Right hand side</span>
+<span class="sd">    </span>
+<span class="sd">    :param TTvec x0: [default == :py:func:`TensorToolbox.core.zerosvec`] initial guess of solution ``x``</span>
+<span class="sd">    :param float eps: [default == 1e-8] stop criteria for GMRES iterations</span>
+<span class="sd">    :param int maxit: [default == 1000] maximum number of iterations for GMRES</span>
+<span class="sd">    :param int restart: [default == 1000] restart constant for GMRES (nothing is implemented to retain information, i.e. Hessemberg and Krylov space are reset)</span>
+<span class="sd">    :param float eps_round: [default == 1e-10] accuracy for Tensor Train rounding operations</span>
+<span class="sd">    :param bool ext_info: [default == False] whehter of not to have additional info returned</span>
+
+<span class="sd">    :return: tuple :py:data:`(x,conv,info)`</span>
+<span class="sd">       </span>
+<span class="sd">       * :py:data:`x` (TTvec): solution of the linear system if converged or last iterate if not converged</span>
+<span class="sd">       * :py:data:`conv` (bool): True -&gt; converged, False -&gt; Not converged / Zero Inner Product exeception</span>
+<span class="sd">       * :py:data:`info` (dict): ``iter`` -&gt; total number of iterations; ``TT_r`` -&gt; last residual in TT format; ``res`` -&gt; norm of last residual; ``err`` -&gt; residual history per iteration</span>
+<span class="sd">    </span>
+<span class="sd">    :note: not optimized for symmetric A</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+    <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> </span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(name)s</span><span class="s2">: </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+                                  <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+    <span class="n">ch</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">TTvec</span><span class="p">,</span> <span class="n">TTmat</span><span class="p">,</span> <span class="n">zerosvec</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">A</span><span class="o">.</span><span class="n">init</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">b</span><span class="o">.</span><span class="n">init</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: TT not initialized correctly&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">TTmat</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">TTmat</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: Conjugate gradient not implemented for the input types&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">x0</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">zerosvec</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">()),</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">())</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="n">TTvec</span><span class="p">)</span> <span class="ow">or</span> <span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span> <span class="o">!=</span> <span class="n">x0</span><span class="o">.</span><span class="n">shape</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.multilinalg.cg: Initial guess must be in TT format and have the same shape of b&quot;</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GMRES: Starting&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Iterate</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x0</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="n">restart</span>
+    <span class="n">err</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="n">counter</span> <span class="o">&lt;</span> <span class="n">maxit</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">restart</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">counter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Compute y_m: Solve y_m = H^-1 g_m</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">npla</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">H</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,:],</span><span class="n">g</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="c1"># Compute</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">restart</span><span class="p">):</span>
+                    <span class="n">x</span> <span class="o">+=</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+            
+            <span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">restart</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">restart</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">restart</span><span class="p">))</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">restart</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">x</span><span class="p">))</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+            <span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># beta</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="o">*</span> <span class="mf">1.</span><span class="o">/</span><span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="n">w</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">v</span><span class="p">[</span><span class="n">j</span><span class="p">])</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">H</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">w</span> <span class="o">-=</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">H</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+        <span class="n">H</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">H</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># lucky break</span>
+            <span class="k">break</span>
+        <span class="n">v</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">w</span> <span class="o">*</span> <span class="mf">1.</span><span class="o">/</span><span class="n">H</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="p">)</span>
+        
+        <span class="c1"># Apply old givens rotations to the new column</span>
+        <span class="n">H</span><span class="p">[:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Q</span><span class="p">[:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">,:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">],</span> <span class="n">H</span><span class="p">[:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="n">j</span><span class="p">])</span>
+        <span class="c1"># New Givens rotation</span>
+        <span class="n">omega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">((</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">H</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">H</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">**</span><span class="mf">2.</span> <span class="o">+</span> <span class="n">H</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">**</span><span class="mf">2.</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">H</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">H</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">**</span><span class="mf">2.</span> <span class="o">+</span> <span class="n">H</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">**</span><span class="mf">2.</span><span class="p">)</span>
+        <span class="n">omega</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+        <span class="n">omega</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+        <span class="n">omega</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="n">omega</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">s</span>
+        <span class="c1"># Apply to the Q, H and g</span>
+        <span class="n">Q</span><span class="p">[:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">,:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">omega</span><span class="p">,</span><span class="n">Q</span><span class="p">[:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">,:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">H</span><span class="p">[:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">,:</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">omega</span><span class="p">,</span><span class="n">H</span><span class="p">[:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">,:</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">g</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">s</span><span class="o">*</span><span class="n">g</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">g</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="n">c</span>
+        <span class="n">err</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">TTvec</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GMRES: err=</span><span class="si">%e</span><span class="s2"> ranks=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">err</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">x</span><span class="o">.</span><span class="n">ranks</span><span class="p">()</span> <span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GMRES: err=</span><span class="si">%e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">err</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        
+        <span class="k">if</span> <span class="n">err</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">:</span>
+            <span class="c1"># convergent break</span>
+            <span class="k">break</span>
+        
+        <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+    
+    <span class="n">conv</span> <span class="o">=</span> <span class="p">(</span><span class="n">counter</span> <span class="o">&lt;</span> <span class="n">maxit</span><span class="p">)</span>
+    
+    <span class="c1"># Compute y_j: Solve H y_j = g_j</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">npla</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">H</span><span class="p">[:</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,:</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span><span class="n">g</span><span class="p">[:</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+    <span class="c1"># Compute solution</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">+=</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+    
+    <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span><span class="o">-</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">x</span><span class="p">))</span><span class="o">.</span><span class="n">rounding</span><span class="p">(</span><span class="n">eps_round</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GMRES: Done &quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">ext_info</span><span class="p">:</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;iter&#39;</span><span class="p">:</span> <span class="n">counter</span><span class="p">,</span>
+                <span class="s1">&#39;TT_r&#39;</span><span class="p">:</span> <span class="n">r</span><span class="p">,</span>
+                <span class="s1">&#39;res&#39;</span><span class="p">:</span> <span class="n">norm</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span>
+                <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">err</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">,</span><span class="n">info</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">conv</span><span class="p">)</span></div>
+        
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013-2015, Daniele Bigoni.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

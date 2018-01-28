@@ -1,0 +1,192 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>TensorToolbox.core.WeightedQuanticsTensorTrainVec &#8212; TensorToolbox 0.3.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for TensorToolbox.core.WeightedQuanticsTensorTrainVec</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1"># This file is part of TensorToolbox.</span>
+<span class="c1">#</span>
+<span class="c1"># TensorToolbox is free software: you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the LGNU Lesser General Public License as published by</span>
+<span class="c1"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># TensorToolbox is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># LGNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the LGNU Lesser General Public License</span>
+<span class="c1"># along with TensorToolbox.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c1">#</span>
+<span class="c1"># DTU UQ Library</span>
+<span class="c1"># Copyright (C) 2014-2016 The Technical University of Denmark</span>
+<span class="c1"># Scientific Computing Section</span>
+<span class="c1"># Department of Applied Mathematics and Computer Science</span>
+<span class="c1">#</span>
+<span class="c1"># Author: Daniele Bigoni</span>
+<span class="c1">#</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;WQTTvec&#39;</span><span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">logging</span> 
+
+<span class="kn">from</span> <span class="nn">TensorToolbox.core</span> <span class="k">import</span> <span class="n">TTvec</span><span class="p">,</span> <span class="n">QTTvec</span><span class="p">,</span> <span class="n">WTTvec</span>
+
+<div class="viewcode-block" id="WQTTvec"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.WQTTvec">[docs]</a><span class="k">class</span> <span class="nc">WQTTvec</span><span class="p">(</span><span class="n">QTTvec</span><span class="p">,</span> <span class="n">WTTvec</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Constructor of multidimensional tensor in Weighted Tensor Train format</span>
+<span class="sd">    </span>
+<span class="sd">    :param Candecomp,ndarray,TT,TensorWrapper A: Available input formats are Candecomp, full tensor in numpy.ndarray, Tensor Train structure (list of cores), or a Tensor Wrapper.</span>
+<span class="sd">    :param list W: list of 1-dimensional ndarray containing the weights for each dimension.</span>
+<span class="sd">    :param int base: base selected to do the folding</span>
+<span class="sd">    :param string store_location: Store computed values during construction on the specified file path. The stored values are ttcross_Jinit and the values used in the TensorWrapper. This permits a restart from already computed values. If empty string nothing is done. (method==&#39;ttcross&#39;)</span>
+<span class="sd">    :param string store_object: Object to be stored (default are the tensor wrapper and ttcross_Jinit)</span>
+<span class="sd">    :param int store_freq: storage frequency. ``store_freq==1`` stores intermediate values at every iteration. The program stores data every ``store_freq`` internal iterations. If ``store_object`` is a SpectralTensorTrain, then ``store_freq`` determines the number of seconds every which to store values.</span>
+<span class="sd">    :param int multidim_point: If the object A returns a multidimensional array, then this can be used to define which point to apply ttcross to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">propagate</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+    <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> </span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(name)s</span><span class="s2">: </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">,</span>
+                                  <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+    <span class="n">ch</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">A</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                 <span class="n">store_location</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">store_object</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">store_freq</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">store_overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                 <span class="n">multidim_point</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">TTvec</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">store_location</span><span class="o">=</span><span class="n">store_location</span><span class="p">,</span> <span class="n">store_object</span><span class="o">=</span><span class="n">store_object</span><span class="p">,</span>
+                       <span class="n">store_freq</span><span class="o">=</span><span class="n">store_freq</span><span class="p">,</span> <span class="n">store_overwrite</span><span class="o">=</span><span class="n">store_overwrite</span><span class="p">,</span>
+                       <span class="n">multidim_point</span><span class="o">=</span><span class="n">multidim_point</span><span class="p">)</span>
+        <span class="n">WTTvec</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span>
+        <span class="n">QTTvec</span><span class="o">.</span><span class="n">_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">TTvec</span><span class="o">.</span><span class="n">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="n">TTvec</span><span class="o">.</span><span class="n">__setstate__</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WQTTvec.build"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.WQTTvec.build">[docs]</a>    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;svd&#39;</span><span class="p">,</span> <span class="n">rs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fix_rank</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">Jinit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">delta</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">maxit</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">mv_eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">mv_maxit</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">max_ranks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">kickrank</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Common interface for the construction of the approximation.</span>
+
+<span class="sd">        :param float eps: [default == 1e-10] For method==&#39;svd&#39;: precision with which to approximate the input tensor. For method==&#39;ttcross&#39;: TT-rounding tolerance for rank-check.</span>
+<span class="sd">        :param string method: &#39;svd&#39; use singular value decomposition to construct the TT representation :cite:`Oseledets2011`, &#39;ttcross&#39; use low rank skeleton approximation to construct the TT representation :cite:`Oseledets2010`, &#39;ttdmrg&#39; uses Tensor Train Renormalization Cross to construct the TT representation :cite:`Savostyanov2011,Savostyanov2013`, &#39;ttdmrgcross&#39; uses &#39;ttdmrg&#39; with &#39;ttcross&#39; approximation of supercores</span>
+<span class="sd">        :param list rs: list of integer ranks of different cores. If ``None`` then the incremental TTcross approach will be used. (method==&#39;ttcross&#39;)</span>
+<span class="sd">        :param bool fix_rank: determines whether the rank is allowed to be increased (method==&#39;ttcross&#39;)</span>
+<span class="sd">        :param list Jinit: list of list of integers containing the r starting columns in the lowrankapprox routine for each core. If ``None`` then pick them randomly. (method==&#39;ttcross&#39;)</span>
+<span class="sd">        :param float delta: accuracy parameter in the TT-cross routine (method==&#39;ttcross&#39;). It is the relative error in Frobenious norm between two successive iterations.</span>
+<span class="sd">        :param int maxit: maximum number of iterations in the lowrankapprox routine (method==&#39;ttcross&#39;)</span>
+<span class="sd">        :param float mv_eps: accuracy parameter for each usage of the maxvol algorithm (method==&#39;ttcross&#39;)</span>
+<span class="sd">        :param int mv_maxit: maximum number of iterations in the maxvol routine (method==&#39;ttcross&#39;)</span>
+<span class="sd">        :param bool fix_rank: Whether the rank is allowed to increase</span>
+<span class="sd">        :param list max_ranks: Maximum ranks to be used to limit the trunaction rank due to ``eps``. The first and last elements of the list must be ``1``, e.g. ``[1,...,1]``. Default: ``None``.</span>
+<span class="sd">        :param int kickrank: rank overshooting for &#39;ttdmrg&#39;</span>
+
+<span class="sd">        .. note:: Weights are not removed after computation, because cannot be trivially</span>
+<span class="sd">           removed from the folded qauntics approximation! The weights need to be</span>
+<span class="sd">           removed manually. For example:</span>
+
+<span class="sd">           &gt;&gt;&gt; wqtt.build()</span>
+<span class="sd">           &gt;&gt;&gt; wtt = wqtt.to_TTvec()</span>
+<span class="sd">           &gt;&gt;&gt; wtt.remove_weights()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">WTTvec</span><span class="o">.</span><span class="n">_build_preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">TTvec</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">rs</span><span class="o">=</span><span class="n">rs</span><span class="p">,</span> <span class="n">fix_rank</span><span class="o">=</span><span class="n">fix_rank</span><span class="p">,</span>
+                    <span class="n">Jinit</span><span class="o">=</span><span class="n">Jinit</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">delta</span><span class="p">,</span> <span class="n">maxit</span><span class="o">=</span><span class="n">maxit</span><span class="p">,</span>
+                    <span class="n">mv_eps</span><span class="o">=</span><span class="n">mv_eps</span><span class="p">,</span> <span class="n">mv_maxit</span><span class="o">=</span><span class="n">mv_maxit</span><span class="p">,</span>
+                    <span class="n">max_ranks</span><span class="o">=</span><span class="n">max_ranks</span><span class="p">,</span> <span class="n">kickrank</span><span class="o">=</span><span class="n">kickrank</span><span class="p">)</span>
+        <span class="n">QTTvec</span><span class="o">.</span><span class="n">_build_postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">WTTvec</span><span class="o">.</span><span class="n">_build_postprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="k">def</span> <span class="nf">to_TTvec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ttvec</span> <span class="o">=</span> <span class="n">QTTvec</span><span class="o">.</span><span class="n">to_TTvec</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">WTTvec</span><span class="p">(</span><span class="n">ttvec</span><span class="o">.</span><span class="n">TT</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">)</span><span class="o">.</span><span class="n">build</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013-2015, Daniele Bigoni.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

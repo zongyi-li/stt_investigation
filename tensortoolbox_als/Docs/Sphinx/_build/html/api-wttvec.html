@@ -1,0 +1,179 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Weighted Tensor Train Vectors &#8212; TensorToolbox 0.3.3 documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Spectral Tensor Train" href="api-stt.html" />
+    <link rel="prev" title="Quantics Tensor Train Matrices" href="api-qttmat.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api-stt.html" title="Spectral Tensor Train"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="api-qttmat.html" title="Quantics Tensor Train Matrices"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" accesskey="U">API</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="api-qttmat.html"
+                        title="previous chapter">Quantics Tensor Train Matrices</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="api-stt.html"
+                        title="next chapter">Spectral Tensor Train</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api-wttvec.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-TensorToolbox">
+<span id="weighted-tensor-train-vectors"></span><h1>Weighted Tensor Train Vectors<a class="headerlink" href="#module-TensorToolbox" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="TensorToolbox.core.WTTvec">
+<em class="property">class </em><code class="descclassname">TensorToolbox.core.</code><code class="descname">WTTvec</code><span class="sig-paren">(</span><em>A</em>, <em>W</em>, <em>store_location=''</em>, <em>store_object=None</em>, <em>store_freq=1</em>, <em>store_overwrite=False</em>, <em>multidim_point=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/WeightedTensorTrainVec.html#WTTvec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.WTTvec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor of multidimensional tensor in Weighted Tensor Train format</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>A</strong> (<a class="reference internal" href="api-candecomp.html#TensorToolbox.core.Candecomp" title="TensorToolbox.core.Candecomp"><em>Candecomp</em></a><em>,</em><em>ndarray</em><em>,</em><em>TT</em><em>,</em><a class="reference internal" href="api-tw.html#TensorToolbox.core.TensorWrapper" title="TensorToolbox.core.TensorWrapper"><em>TensorWrapper</em></a>) – Available input formats are Candecomp, full tensor in numpy.ndarray, Tensor Train structure (list of cores), or a Tensor Wrapper.</li>
+<li><strong>W</strong> (<em>list</em>) – list of 1-dimensional ndarray containing the weights for each dimension.</li>
+<li><strong>store_location</strong> (<a class="reference external" href="https://docs.python.org/2/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) – Store computed values during construction on the specified file path. The stored values are ttcross_Jinit and the values used in the TensorWrapper. This permits a restart from already computed values. If empty string nothing is done. (method==’ttcross’)</li>
+<li><strong>store_object</strong> (<a class="reference external" href="https://docs.python.org/2/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) – Object to be stored (default are the tensor wrapper and ttcross_Jinit)</li>
+<li><strong>store_freq</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – storage frequency. <code class="docutils literal"><span class="pre">store_freq==1</span></code> stores intermediate values at every iteration. The program stores data every <code class="docutils literal"><span class="pre">store_freq</span></code> internal iterations. If <code class="docutils literal"><span class="pre">store_object</span></code> is a SpectralTensorTrain, then <code class="docutils literal"><span class="pre">store_freq</span></code> determines the number of seconds every which to store values.</li>
+<li><strong>multidim_point</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – If the object A returns a multidimensional array, then this can be used to define which point to apply ttcross to.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="TensorToolbox.core.WTTvec.apply_weights_on_data">
+<code class="descname">apply_weights_on_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/WeightedTensorTrainVec.html#WTTvec.apply_weights_on_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.WTTvec.apply_weights_on_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the weights on the input data A</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.WTTvec.build">
+<code class="descname">build</code><span class="sig-paren">(</span><em>eps=1e-10</em>, <em>method='svd'</em>, <em>rs=None</em>, <em>fix_rank=False</em>, <em>Jinit=None</em>, <em>delta=0.0001</em>, <em>maxit=100</em>, <em>mv_eps=1e-06</em>, <em>mv_maxit=100</em>, <em>max_ranks=None</em>, <em>kickrank=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/WeightedTensorTrainVec.html#WTTvec.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.WTTvec.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Common interface for the construction of the approximation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – [default == 1e-10] For method==’svd’: precision with which to approximate the input tensor. For method==’ttcross’: TT-rounding tolerance for rank-check.</li>
+<li><strong>method</strong> (<a class="reference external" href="https://docs.python.org/2/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) – ‘svd’ use singular value decomposition to construct the TT representation <a class="reference internal" href="zrefs.html#oseledets2011" id="id1">[1]</a>, ‘ttcross’ use low rank skeleton approximation to construct the TT representation <a class="reference internal" href="zrefs.html#oseledets2010" id="id2">[2]</a>, ‘ttdmrg’ uses Tensor Train Renormalization Cross to construct the TT representation <a class="reference internal" href="zrefs.html#savostyanov2011" id="id3">[3]</a><a class="reference internal" href="zrefs.html#savostyanov2013" id="id4">[4]</a>, ‘ttdmrgcross’ uses ‘ttdmrg’ with ‘ttcross’ approximation of supercores</li>
+<li><strong>rs</strong> (<em>list</em>) – list of integer ranks of different cores. If <code class="docutils literal"><span class="pre">None</span></code> then the incremental TTcross approach will be used. (method==’ttcross’)</li>
+<li><strong>fix_rank</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – determines whether the rank is allowed to be increased (method==’ttcross’)</li>
+<li><strong>Jinit</strong> (<em>list</em>) – list of list of integers containing the r starting columns in the lowrankapprox routine for each core. If <code class="docutils literal"><span class="pre">None</span></code> then pick them randomly. (method==’ttcross’)</li>
+<li><strong>delta</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – accuracy parameter in the TT-cross routine (method==’ttcross’). It is the relative error in Frobenious norm between two successive iterations.</li>
+<li><strong>maxit</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – maximum number of iterations in the lowrankapprox routine (method==’ttcross’)</li>
+<li><strong>mv_eps</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – accuracy parameter for each usage of the maxvol algorithm (method==’ttcross’)</li>
+<li><strong>mv_maxit</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – maximum number of iterations in the maxvol routine (method==’ttcross’)</li>
+<li><strong>fix_rank</strong> – Whether the rank is allowed to increase</li>
+<li><strong>max_ranks</strong> (<em>list</em>) – Maximum ranks to be used to limit the trunaction rank due to <code class="docutils literal"><span class="pre">eps</span></code>. The first and last elements of the list must be <code class="docutils literal"><span class="pre">1</span></code>, e.g. <code class="docutils literal"><span class="pre">[1,...,1]</span></code>. Default: <code class="docutils literal"><span class="pre">None</span></code>.</li>
+<li><strong>kickrank</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – rank overshooting for ‘ttdmrg’</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="TensorToolbox.core.WTTvec.remove_weights_from_data">
+<code class="descname">remove_weights_from_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/WeightedTensorTrainVec.html#WTTvec.remove_weights_from_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.WTTvec.remove_weights_from_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the weights from the input data A</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api-stt.html" title="Spectral Tensor Train"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="api-qttmat.html" title="Quantics Tensor Train Matrices"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" >API</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013-2015, Daniele Bigoni.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

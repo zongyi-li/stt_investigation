@@ -1,0 +1,559 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>TensorToolbox.core.auxiliary &#8212; TensorToolbox 0.3.3 documentation</title>
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for TensorToolbox.core.auxiliary</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1"># This file is part of TensorToolbox.</span>
+<span class="c1">#</span>
+<span class="c1"># TensorToolbox is free software: you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the LGNU Lesser General Public License as published by</span>
+<span class="c1"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># TensorToolbox is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># LGNU Lesser General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the LGNU Lesser General Public License</span>
+<span class="c1"># along with TensorToolbox.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="c1">#</span>
+<span class="c1"># DTU UQ Library</span>
+<span class="c1"># Copyright (C) 2014-2016 The Technical University of Denmark</span>
+<span class="c1"># Scientific Computing Section</span>
+<span class="c1"># Department of Applied Mathematics and Computer Science</span>
+<span class="c1">#</span>
+<span class="c1"># Author: Daniele Bigoni</span>
+<span class="c1">#</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;NumericsError&#39;</span><span class="p">,</span><span class="s1">&#39;ConvergenceError&#39;</span><span class="p">,</span><span class="s1">&#39;TTcrossLoopError&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;idxunfold&#39;</span><span class="p">,</span><span class="s1">&#39;idxfold&#39;</span><span class="p">,</span><span class="s1">&#39;expand_idxs&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;matkron_to_mattensor&#39;</span><span class="p">,</span><span class="s1">&#39;mat_to_tt_idxs&#39;</span><span class="p">,</span><span class="s1">&#39;tt_to_mat_idxs&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;maxvol&#39;</span><span class="p">,</span><span class="s1">&#39;lowrankapprox&#39;</span><span class="p">,</span><span class="s1">&#39;reort&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;isint&#39;</span><span class="p">,</span> <span class="s1">&#39;isfloat&#39;</span><span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">itertools.izip</span> <span class="k">as</span> <span class="nn">zip</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="k">as</span> <span class="nn">npla</span>
+<span class="kn">import</span> <span class="nn">scipy.linalg</span> <span class="k">as</span> <span class="nn">scla</span>
+
+<span class="k">class</span> <span class="nc">NumericsError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">ConvergenceError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">TTcrossLoopError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">isint</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">isfloat</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span>
+
+<div class="viewcode-block" id="matkron_to_mattensor"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.matkron_to_mattensor">[docs]</a><span class="k">def</span> <span class="nf">matkron_to_mattensor</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">nrows</span><span class="p">,</span><span class="n">ncols</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This function reshapes a 2D-matrix obtained as kron product of len(nrows)==len(ncols) matrices, to a len(nrows)-tensor that can be used as input for the TTmat constructor. Applies the Van Loan-Pitsianis reordering of the matrix elements.</span>
+<span class="sd">    </span>
+<span class="sd">    :param ndarray A: 2-dimensional matrix</span>
+<span class="sd">    :param list,int nrows,ncols: number of rows and number of columns of the original matrices used for the kron product</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="n">A</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.matkron_to_mattensor: The input ndarray has the wrong number of dimension. 2d-ndarray required.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span> <span class="ow">or</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">ncols</span><span class="p">):</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.matkron_to_mattensor: dimension of A not consistent with nrows or ncols&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span> <span class="ow">and</span> <span class="n">isint</span><span class="p">(</span><span class="n">ncols</span><span class="p">):</span>
+        <span class="n">nrows</span> <span class="o">=</span> <span class="p">[</span><span class="n">nrows</span><span class="p">]</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="p">[</span><span class="n">ncols</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ncols</span><span class="p">):</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.matkron_to_mattensor: len(nrows)!=len(ncols)&quot;</span><span class="p">)</span>
+    
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span>
+    <span class="n">dims</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span>
+    <span class="n">dims</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ncols</span><span class="p">)</span>
+
+    <span class="c1"># Prepare interleaved idxs</span>
+    <span class="n">idxs</span> <span class="o">=</span> <span class="p">[[</span><span class="n">i</span><span class="p">,</span><span class="n">d</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="p">)]</span>
+    <span class="n">idxs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">idxs</span><span class="p">))</span>
+
+    <span class="c1"># Reshape and re-order</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">dims</span><span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">axes</span><span class="o">=</span><span class="n">idxs</span><span class="p">)</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="n">nrows</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">ncols</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d</span><span class="p">)])</span>
+    
+    <span class="k">return</span> <span class="n">A</span></div>
+
+<div class="viewcode-block" id="idxunfold"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.idxunfold">[docs]</a><span class="k">def</span> <span class="nf">idxunfold</span><span class="p">(</span><span class="n">dlist</span><span class="p">,</span><span class="n">idxs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Find the index corresponding to the unfolded (flat) version of a tensor</span>
+<span class="sd">    </span>
+<span class="sd">    :param list,int dlist: list of integers containing the dimensions of the tensor</span>
+<span class="sd">    :param list,int idxs: tensor index</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: index for the flatten tensor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Check whether index out of bounds</span>
+    <span class="kn">import</span> <span class="nn">operator</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">ge</span><span class="p">,</span><span class="n">idxs</span><span class="p">,</span><span class="n">dlist</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.idxunfold: Index out of bounds&quot;</span><span class="p">)</span>
+    
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dlist</span><span class="p">)</span>
+
+    <span class="n">plist</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">plist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">plist</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">dlist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">)</span>
+
+    <span class="n">ii</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span> <span class="p">[</span> <span class="n">p</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">idxs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="n">plist</span><span class="p">))</span> <span class="p">]</span> <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ii</span></div>
+
+<div class="viewcode-block" id="idxfold"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.idxfold">[docs]</a><span class="k">def</span> <span class="nf">idxfold</span><span class="p">(</span><span class="n">dlist</span><span class="p">,</span><span class="n">idx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Find the index corresponding to the folded version of a tensor from the flatten version</span>
+
+<span class="sd">    :param list,int dlist: list of integers containing the dimensions of the tensor</span>
+<span class="sd">    :param int idx: tensor flatten index</span>
+
+<span class="sd">    :returns: list of int -- the index for the folded version</span>
+
+<span class="sd">    :note: this routine can be used to get the indexes of a TTmat from indices of a matkron (matrix obtained using np.kron): (i,j) \in N^d x N^d -&gt; ((i_1,..,i_d),(j_1,..,j_d)) \in (N x .. x N) x (N x .. x N)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dlist</span><span class="p">)</span>
+
+    <span class="n">cc</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">dlist</span><span class="p">):</span> <span class="n">cc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">cc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">val</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="n">cc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span> <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.idxunfold: Index out of bounds&quot;</span><span class="p">)</span>
+
+    <span class="n">ii</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">idx</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">ii</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">tmp</span><span class="o">//</span><span class="n">cc</span><span class="p">[</span><span class="n">n</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span> <span class="o">%</span> <span class="n">cc</span><span class="p">[</span><span class="n">n</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="expand_idxs"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.expand_idxs">[docs]</a><span class="k">def</span> <span class="nf">expand_idxs</span><span class="p">(</span><span class="n">idxs_in</span><span class="p">,</span><span class="n">shape</span><span class="p">,</span><span class="n">ghost_shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">fix_dims</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">fix_idxs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; From a tuple of indicies, apply all the unslicing transformations and restore the fixed indices in order to extract values from a tensor with a certain ``ghost_shape``. If ``ghost_shape==None``, ``fix_dims==None`` and ``fix_idxs==None``, then this performs only an unslicing of the index and it is assumed ``ghost_shape=shape``.</span>
+<span class="sd">    </span>
+<span class="sd">    :param tuple idxs_in: indexing tuple. The admissible slicing format is the same used in np.ndarray.</span>
+<span class="sd">    :param tuple shape: shape of the tensor</span>
+<span class="sd">    :param tuple ghost_shape: shape of the tensor without fixed indices</span>
+<span class="sd">    :param list fix_dims: whether there are dimensions which had been fixed and need to be added.</span>
+<span class="sd">    :param list fix_idxs: fixed idxs for each fixed dimension.</span>
+<span class="sd">    </span>
+<span class="sd">    :return: tuple ``(lidxs,out_shape,transpose_list_shape)``. ``lidxs`` is an iterator of the indices. ``out_shape`` is a tuple containing the shape of the output tensor. ``transpose_list_shape`` is a flag indicating whether the output format need to be transposed (behaving accordingly to np.ndarray).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ghost_shape</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">fix_dims</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">fix_idxs</span> <span class="o">==</span> <span class="kc">None</span> <span class="p">):</span>
+        <span class="n">ghost_shape</span> <span class="o">=</span> <span class="n">shape</span>
+        <span class="n">fix_dims</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">fix_idxs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">ghost_shape</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">fix_dims</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">fix_idxs</span> <span class="o">==</span> <span class="kc">None</span> <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;If any of the ghost_shape, fix_dims, and fix_idxs are specified, then the other must be specified too&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Transform the tuple to a list for convinience</span>
+    <span class="n">idxs_in</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">idxs_in</span><span class="p">)</span>
+
+    <span class="c1"># Slice notation can be used. Remember: slice(start:stop:step)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idxs_in</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;wrong number of indices&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Check that all the lists are of the same length</span>
+    <span class="n">int_idx</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">llen</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">idxs_in</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+            <span class="n">int_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span><span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">idxs_in</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">llen</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">llen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">llen</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;List of indices must have the same length.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">llen</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span> <span class="n">llen</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># Expand single indices in idxs_in to llen</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">int_idx</span><span class="p">:</span> <span class="n">idxs_in</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">idxs_in</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">*</span> <span class="n">llen</span>
+
+    <span class="c1"># Update input indices of slices and lists</span>
+    <span class="n">list_idx_in</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">slice_idx_in</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">idxs_in</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span><span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">list_idx_in</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="n">slice_idx_in</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="c1"># Insert fixed indices</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">fix_dims</span><span class="p">:</span>
+        <span class="n">idxs_in</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">[</span><span class="n">fix_idxs</span><span class="p">[</span><span class="n">fix_dims</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">i</span><span class="p">)]]</span> <span class="o">*</span> <span class="n">llen</span><span class="p">)</span>
+
+    <span class="c1"># Construct list of indices which are lists and slices</span>
+    <span class="n">list_idx</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">list_IDXs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">slice_idx</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">slice_IDXs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">out_shape</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">idx</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">idxs_in</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span><span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">list_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">list_IDXs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">idx</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="n">slice_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">IDXs</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">idx</span><span class="o">.</span><span class="n">start</span> <span class="k">if</span> <span class="n">idx</span><span class="o">.</span><span class="n">start</span> <span class="o">!=</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                             <span class="n">idx</span><span class="o">.</span><span class="n">stop</span>  <span class="k">if</span> <span class="n">idx</span><span class="o">.</span><span class="n">stop</span>  <span class="o">!=</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ghost_shape</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                             <span class="n">idx</span><span class="o">.</span><span class="n">step</span>  <span class="k">if</span> <span class="n">idx</span><span class="o">.</span><span class="n">step</span>  <span class="o">!=</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">slice_IDXs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">IDXs</span> <span class="p">)</span>
+            <span class="n">out_shape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">IDXs</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_idx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="n">list_IDXs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span> <span class="c1"># Ghost element added to make the full slicing work</span>
+    <span class="n">unlistIdxs</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">list_IDXs</span><span class="p">)</span>
+
+    <span class="n">transpose_list_shape</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">llen</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> 
+        <span class="n">out_shape</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">llen</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">slice_idx_in</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_idx_in</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">min</span><span class="p">(</span><span class="n">list_idx_in</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">slice_idx_in</span><span class="p">):</span>
+            <span class="n">transpose_list_shape</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Un-slice sliced idxs</span>
+    <span class="n">unslicedIdxs</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">slice_IDXs</span><span class="p">)</span>
+
+    <span class="c1"># Final list of indices (iterator)</span>
+    <span class="n">lidxs_iter</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">unlistIdxs</span><span class="p">,</span> <span class="n">unslicedIdxs</span><span class="p">)</span>
+    
+    <span class="n">lidxs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,(</span><span class="n">lidx</span><span class="p">,</span><span class="n">sidx</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lidxs_iter</span><span class="p">):</span>
+        <span class="c1"># Reorder the idxs</span>
+        <span class="n">idxs</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">list_idx</span><span class="p">)</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">slice_idx</span><span class="p">))]</span> 
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">jj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">list_idx</span><span class="p">):</span> <span class="n">idxs</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span> <span class="o">=</span> <span class="n">lidx</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">jj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">slice_idx</span><span class="p">):</span> <span class="n">idxs</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span> <span class="o">=</span> <span class="n">sidx</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">lidxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span> <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="p">(</span><span class="n">lidxs</span><span class="p">,</span><span class="n">out_shape</span><span class="p">,</span><span class="n">transpose_list_shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mat_to_tt_idxs"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.mat_to_tt_idxs">[docs]</a><span class="k">def</span> <span class="nf">mat_to_tt_idxs</span><span class="p">(</span><span class="n">rowidxs</span><span class="p">,</span><span class="n">colidxs</span><span class="p">,</span><span class="n">nrows</span><span class="p">,</span><span class="n">ncols</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Mapping from the multidimensional matrix indexing to the tt matrix indexing</span>
+
+<span class="sd">    (rowidxs,colidxs) = ((i_1,...,i_d),(j_1,...,j_d)) -&gt; (l_1,...,l_d)</span>
+<span class="sd">    </span>
+<span class="sd">    :param tuple,int rowidxs,colidxs: list of row and column indicies. len(rowidxs) == len(colidxs)</span>
+<span class="sd">    :param tuple,int nrows,ncols: dimensions of matrices</span>
+
+<span class="sd">    :returns: tuple,int indices in the tt format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">rowidxs</span><span class="p">):</span> <span class="n">rowidxs</span> <span class="o">=</span> <span class="p">(</span><span class="n">rowidxs</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">colidxs</span><span class="p">):</span> <span class="n">colidxs</span> <span class="o">=</span> <span class="p">(</span><span class="n">colidxs</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">nrows</span><span class="p">):</span> <span class="n">nrows</span> <span class="o">=</span> <span class="p">(</span><span class="n">nrows</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">ncols</span><span class="p">):</span> <span class="n">ncols</span> <span class="o">=</span> <span class="p">(</span><span class="n">ncols</span><span class="p">,)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rowidxs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">colidxs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ncols</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.mat_to_tt_idxs: not consistent dimensions in the input arguments&quot;</span><span class="p">)</span>
+    
+    <span class="kn">import</span> <span class="nn">operator</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">ge</span><span class="p">,</span><span class="n">rowidxs</span><span class="p">,</span><span class="n">nrows</span><span class="p">))</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">ge</span><span class="p">,</span><span class="n">colidxs</span><span class="p">,</span><span class="n">ncols</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.mat_to_tt_idxs: Index out of bound&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rowidxs</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ncols</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">colidxs</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="tt_to_mat_idxs"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.tt_to_mat_idxs">[docs]</a><span class="k">def</span> <span class="nf">tt_to_mat_idxs</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span><span class="n">nrows</span><span class="p">,</span><span class="n">ncols</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Mapping from the tt matrix indexing to the multidimensional matrix indexing</span>
+
+<span class="sd">     (l_1,...,l_d) -&gt; (rowidxs,colidxs) = ((i_1,...,i_d),(j_1,...,j_d))</span>
+<span class="sd">    </span>
+<span class="sd">    :param tuple,int idxs: list of tt indicies. len(idxs) == len(nrows) == len(ncols)</span>
+<span class="sd">    :param tuple,int nrows,ncols: dimensions of matrices</span>
+
+<span class="sd">    :returns: (rowidxs,colidxs) = ((i_1,..,i_d),(j_1,..,j_d)) indices in the matrix indexing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">idxs</span><span class="p">):</span> <span class="n">idxs</span> <span class="o">=</span> <span class="p">(</span><span class="n">idxs</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">nrows</span><span class="p">):</span> <span class="n">nrows</span> <span class="o">=</span> <span class="p">(</span><span class="n">nrows</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">isint</span><span class="p">(</span><span class="n">ncols</span><span class="p">):</span> <span class="n">ncols</span> <span class="o">=</span> <span class="p">(</span><span class="n">ncols</span><span class="p">,)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ncols</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.tt_to_mat_idxs: not consistent dimensions in the input arguments&quot;</span><span class="p">)</span>
+    
+    <span class="kn">import</span> <span class="nn">operator</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">ge</span><span class="p">,</span><span class="n">idxs</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">nrows</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ncols</span><span class="p">))):</span>
+        <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.tt_to_mat_idxs: Index out of bound&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span> <span class="o">//</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ncols</span><span class="p">)),</span><span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">ncols</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="maxvol"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.maxvol">[docs]</a><span class="k">def</span> <span class="nf">maxvol</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span><span class="n">maxit</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Find the rxr submatrix of maximal volume in A(nxr), n&gt;=r</span>
+
+<span class="sd">    :param ndarray A: two dimensional array with (n,r)=shape(A) where r&lt;=n</span>
+<span class="sd">    :param float delta: stopping cirterion [default=1e-2]</span>
+<span class="sd">    :param int maxit: maximum number of iterations [default=100]</span>
+
+<span class="sd">    :returns: ``(I,AsqInv,it)`` where ``I`` is the list or rows of A forming the matrix with maximal volume, ``AsqInv`` is the inverse of the matrix with maximal volume and ``it`` is the number of iterations to convergence </span>
+
+<span class="sd">    :raises: raise exception if the dimension of A is r&gt;n or if A is singular</span>
+<span class="sd">    :raises: ConvergenceError if convergence is not reached in maxit iterations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">r</span><span class="p">)</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">if</span> <span class="n">r</span><span class="o">&gt;</span><span class="n">n</span> <span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.maxvol: A(nxr) must be a thin matrix, i.e. n&gt;=r&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Find an arbitrary non-singular rxr matrix in A</span>
+    <span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="n">L</span><span class="p">,</span><span class="n">U</span><span class="p">)</span> <span class="o">=</span> <span class="n">scla</span><span class="o">.</span><span class="n">lu</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+    <span class="c1"># Check singularity </span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">U</span><span class="p">)))</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">NumericsError</span><span class="p">(</span><span class="s2">&quot;TensorToolbox.core.maxvol: Matrix A is singular&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Reorder A so that the non-singular matrix is on top</span>
+    <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> <span class="c1"># set of swapping indices</span>
+    <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">I</span><span class="p">)</span>
+    <span class="c1"># Select Asq the top square matrix</span>
+    <span class="n">Asq</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">I</span><span class="p">[:</span><span class="n">r</span><span class="p">],:]</span>
+    
+    <span class="c1"># Compute inverse of Asq: Asq^-1 = (PLU)^-1</span>
+    <span class="n">LU</span> <span class="o">=</span> <span class="n">L</span><span class="p">[:</span><span class="n">r</span><span class="p">,:</span><span class="n">r</span><span class="p">]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">+</span> <span class="n">U</span>
+    <span class="n">AsqInv</span> <span class="o">=</span> <span class="n">scla</span><span class="o">.</span><span class="n">lu_solve</span><span class="p">((</span><span class="n">LU</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">r</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+    <span class="c1"># Compute B</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="n">I</span><span class="p">,:],</span><span class="n">AsqInv</span><span class="p">)</span>
+    
+    <span class="c1"># Find maximum and row</span>
+    <span class="n">maxidx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">B</span><span class="p">))</span>
+    <span class="n">maxB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">B</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">maxidx</span><span class="p">]</span>
+    <span class="p">(</span><span class="n">maxrow</span><span class="p">,</span><span class="n">maxcol</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">maxidx</span> <span class="o">//</span> <span class="n">r</span><span class="p">,</span> <span class="n">maxidx</span> <span class="o">%</span> <span class="n">r</span><span class="p">)</span>
+    
+    <span class="n">it</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">eps</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">+</span> <span class="n">delta</span>
+    <span class="k">while</span> <span class="n">it</span> <span class="o">&lt;</span> <span class="n">maxit</span> <span class="ow">and</span> <span class="n">maxB</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">:</span>
+        <span class="n">it</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Update AsqInv</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">r</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">q</span><span class="p">[</span><span class="n">maxcol</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="n">vT</span> <span class="o">=</span> <span class="n">A</span><span class="p">[[</span><span class="n">I</span><span class="p">[</span><span class="n">maxrow</span><span class="p">],],:]</span> <span class="o">-</span> <span class="n">A</span><span class="p">[[</span><span class="n">I</span><span class="p">[</span><span class="n">maxcol</span><span class="p">],],:]</span>
+        <span class="n">AsqInv</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">AsqInv</span><span class="p">,</span><span class="n">q</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">vT</span><span class="p">,</span><span class="n">AsqInv</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">vT</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">AsqInv</span><span class="p">,</span><span class="n">q</span><span class="p">)))</span> <span class="c1"># Eq (8) in &quot;How to find a good submatrix&quot;</span>
+        
+        <span class="c1"># Update B using Sherman-Woodbury-Morrison formula</span>
+        <span class="n">Bj</span> <span class="o">=</span> <span class="n">B</span><span class="p">[:,[</span><span class="n">maxcol</span><span class="p">,]]</span>
+        <span class="c1"># Bj[maxcol,0] -= 1.</span>
+        <span class="n">Bj</span><span class="p">[</span><span class="n">maxrow</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1.</span>
+        <span class="n">Bi</span> <span class="o">=</span> <span class="n">B</span><span class="p">[[</span><span class="n">maxrow</span><span class="p">,],:]</span>
+        <span class="n">Bi</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">maxcol</span><span class="p">]</span> <span class="o">-=</span> <span class="mf">1.</span>
+        <span class="n">B</span><span class="p">[</span><span class="n">r</span><span class="p">:,:]</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Bj</span><span class="p">[</span><span class="n">r</span><span class="p">:],</span><span class="n">Bi</span><span class="p">)</span><span class="o">/</span><span class="n">B</span><span class="p">[</span><span class="n">maxrow</span><span class="p">,</span><span class="n">maxcol</span><span class="p">]</span>
+
+        <span class="c1"># Update index of maxvol matrix I</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">maxcol</span><span class="p">]</span>
+        <span class="n">I</span><span class="p">[</span><span class="n">maxcol</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">maxrow</span><span class="p">]</span>
+        <span class="n">I</span><span class="p">[</span><span class="n">maxrow</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span>
+
+        <span class="c1"># # Manual update TO BE REMOVED</span>
+        <span class="c1"># AsqInv = npla.inv(A[I[:r],:])</span>
+        <span class="c1"># B = np.dot(A[I,:], AsqInv)</span>
+
+        <span class="c1"># Find new maximum in B</span>
+        <span class="n">maxidx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">B</span><span class="p">))</span>
+        <span class="n">maxB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">B</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">maxidx</span><span class="p">]</span>
+        <span class="p">(</span><span class="n">maxrow</span><span class="p">,</span><span class="n">maxcol</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">maxidx</span> <span class="o">//</span> <span class="n">r</span><span class="p">,</span> <span class="n">maxidx</span> <span class="o">%</span> <span class="n">r</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">maxB</span> <span class="o">&gt;</span> <span class="n">eps</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ConvergenceError</span><span class="p">(</span><span class="s1">&#39;Maxvol algorithm did not converge.&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Return max-vol submatrix Asq</span>
+    <span class="k">return</span> <span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">asscalar</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span><span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndenumerate</span><span class="p">(</span><span class="n">I</span><span class="p">[:</span><span class="n">r</span><span class="p">])],</span><span class="n">AsqInv</span><span class="p">,</span><span class="n">it</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="lowrankapprox"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.lowrankapprox">[docs]</a><span class="k">def</span> <span class="nf">lowrankapprox</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">Jinit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">maxit</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">maxvoleps</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">,</span> <span class="n">maxvolit</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Given a matrix A nxm, find the maximum volume submatrix with rank r&lt;n,m.</span>
+<span class="sd">    </span>
+<span class="sd">    :param ndarray A: two dimensional array with dimension nxm</span>
+<span class="sd">    :param int r: rank of the maxvol submatrix</span>
+<span class="sd">    :param list Jinit: list of integers containing the r starting columns. If ``None`` then pick them randomly.</span>
+<span class="sd">    :param float delta: accuracy parameter</span>
+<span class="sd">    :param int maxit: maximum number of iterations in the lowrankapprox routine</span>
+<span class="sd">    :param float maxvoleps: accuracy parameter for each usage of the maxvol algorithm</span>
+<span class="sd">    :parma int maxvolit: maximum number of iterations in the maxvol routine</span>
+<span class="sd">    </span>
+<span class="sd">    :return: ``(I,J,AsqInv,it)`` where ``I`` and ``J`` are the list of rows and columns of A that compose the submatrix of maximal volume, ``AsqInv`` is the inverse of such matrix and ``it`` is the number of iteration to convergence</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">import</span> <span class="nn">random</span>
+    
+    <span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="n">m</span><span class="p">)</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="n">r</span><span class="o">&gt;</span><span class="n">n</span> <span class="ow">or</span> <span class="n">r</span><span class="o">&gt;</span><span class="n">m</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Rank r bigger than shape of A&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Pick first column indices J at random</span>
+    <span class="k">if</span> <span class="n">Jinit</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">),</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="n">Jinit</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">J</span><span class="p">)</span> <span class="o">!=</span> <span class="n">r</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Invalid number of init columns: len(J) != r&#39;</span><span class="p">)</span>
+    <span class="n">J</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">Aold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="n">m</span><span class="p">))</span>
+    <span class="n">Anew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="n">m</span><span class="p">))</span>
+    <span class="n">it</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">it</span> <span class="o">&lt;</span> <span class="n">maxit</span> <span class="ow">and</span> <span class="n">npla</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span> <span class="n">Anew</span><span class="o">-</span><span class="n">Aold</span><span class="p">,</span> <span class="s1">&#39;fro&#39;</span> <span class="p">)</span> <span class="o">&gt;</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">npla</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Anew</span><span class="p">,</span><span class="s1">&#39;fro&#39;</span><span class="p">):</span>
+        <span class="n">it</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Row cycle</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="n">J</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">R</span><span class="p">,(</span><span class="nb">len</span><span class="p">(</span><span class="n">R</span><span class="p">),</span><span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># QR decomposition</span>
+        <span class="p">(</span><span class="n">Q</span><span class="p">,</span><span class="n">R</span><span class="p">)</span> <span class="o">=</span> <span class="n">scla</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;economic&#39;</span><span class="p">)</span>
+        <span class="c1"># Maxvol</span>
+        <span class="p">(</span><span class="n">I</span><span class="p">,</span><span class="n">QsqInv</span><span class="p">,</span><span class="n">it</span><span class="p">)</span> <span class="o">=</span> <span class="n">maxvol</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span><span class="n">maxvoleps</span><span class="p">,</span><span class="n">maxvolit</span><span class="p">)</span>
+        <span class="c1"># Column cycle</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">I</span><span class="p">,:]</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">C</span><span class="p">,(</span><span class="nb">len</span><span class="p">(</span><span class="n">C</span><span class="p">),</span><span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># QR decomposition</span>
+        <span class="p">(</span><span class="n">Q</span><span class="p">,</span><span class="n">R</span><span class="p">)</span> <span class="o">=</span> <span class="n">scla</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">C</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;economic&#39;</span><span class="p">)</span>
+        <span class="c1"># Maxvol</span>
+        <span class="p">(</span><span class="n">J</span><span class="p">,</span><span class="n">QsqInv</span><span class="p">,</span><span class="n">it</span><span class="p">)</span> <span class="o">=</span> <span class="n">maxvol</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span><span class="n">maxvoleps</span><span class="p">,</span><span class="n">maxvolit</span><span class="p">)</span>
+        <span class="c1"># New approximation</span>
+        <span class="n">Aold</span> <span class="o">=</span> <span class="n">Anew</span>
+        <span class="n">Atmp</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:,</span><span class="n">J</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="n">Atmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Atmp</span><span class="p">,(</span><span class="nb">len</span><span class="p">(</span><span class="n">Atmp</span><span class="p">),</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">Anew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Atmp</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">QsqInv</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">npla</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span> <span class="n">Anew</span><span class="o">-</span><span class="n">Aold</span><span class="p">,</span> <span class="s1">&#39;fro&#39;</span> <span class="p">)</span> <span class="o">&gt;</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">npla</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Anew</span><span class="p">,</span><span class="s1">&#39;fro&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ConvergenceError</span><span class="p">(</span><span class="s1">&#39;Low Rank Approximation algorithm did not converge.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">R</span><span class="p">)))</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">spacing</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ConvergenceError</span><span class="p">(</span><span class="s1">&#39;Low Rank Approximation algorithm converged to a singular solution. Rank r over-estimated.&#39;</span><span class="p">)</span>
+    <span class="c1"># Compute AsqInv</span>
+    <span class="n">AsqInv</span> <span class="o">=</span> <span class="n">scla</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="n">QsqInv</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    
+    <span class="k">return</span> <span class="p">(</span><span class="n">I</span><span class="p">,</span><span class="n">J</span><span class="p">,</span><span class="n">AsqInv</span><span class="p">,</span><span class="n">it</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="reort"><a class="viewcode-back" href="../../../api-core.html#TensorToolbox.core.reort">[docs]</a><span class="k">def</span> <span class="nf">reort</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">uadd</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Golub-Kahan reorthogonalization</span>
+<span class="sd">    </span>
+<span class="sd">    .. note: See Oseledets&#39; TT-Toolbox</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">uadd</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">u</span>
+    
+    <span class="k">if</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">uadd</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">uadd</span> <span class="o">=</span> <span class="n">uadd</span><span class="p">[:,</span> <span class="p">:</span><span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    
+    <span class="n">radd</span> <span class="o">=</span> <span class="n">uadd</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    
+    <span class="n">mvr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">u</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">uadd</span><span class="p">)</span>
+    <span class="n">unew</span> <span class="o">=</span> <span class="n">uadd</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">u</span><span class="p">,</span> <span class="n">mvr</span> <span class="p">)</span>
+    <span class="n">reort_flag</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">while</span> <span class="n">reort_flag</span><span class="p">:</span>
+        <span class="n">reort_flag</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">norm_unew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">unew</span><span class="o">**</span><span class="mf">2.</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">norm_uadd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">uadd</span><span class="o">**</span><span class="mf">2.</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">reort_flag</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">([</span> <span class="kc">True</span> <span class="k">for</span> <span class="p">(</span><span class="n">nn</span><span class="p">,</span><span class="n">na</span><span class="p">)</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">norm_unew</span><span class="p">,</span><span class="n">norm_uadd</span><span class="p">)</span> <span class="k">if</span> <span class="n">nn</span> <span class="o">&lt;=</span> <span class="o">.</span><span class="mi">25</span> <span class="o">*</span> <span class="n">na</span><span class="p">]))</span>
+        <span class="p">[</span><span class="n">unew</span><span class="p">,</span><span class="n">_</span><span class="p">]</span> <span class="o">=</span> <span class="n">scla</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">unew</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;economic&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">reort_flag</span><span class="p">:</span>
+            <span class="n">su</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">u</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">unew</span> <span class="p">)</span>
+            <span class="n">uadd</span> <span class="o">=</span> <span class="n">unew</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">unew</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">su</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">unew</span><span class="p">)</span> <span class="p">)</span></div>
+            
+    
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013-2015, Daniele Bigoni.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>

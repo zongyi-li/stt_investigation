@@ -1,0 +1,170 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Tensor Train Matrices &#8212; TensorToolbox 0.3.3 documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.3.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quantics Tensor Train Vectors" href="api-qttvec.html" />
+    <link rel="prev" title="Tensor Train Vectors" href="api-ttvec.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api-qttvec.html" title="Quantics Tensor Train Vectors"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="api-ttvec.html" title="Tensor Train Vectors"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" accesskey="U">API</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="api-ttvec.html"
+                        title="previous chapter">Tensor Train Vectors</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="api-qttvec.html"
+                        title="next chapter">Quantics Tensor Train Vectors</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api-ttmat.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-TensorToolbox">
+<span id="tensor-train-matrices"></span><h1>Tensor Train Matrices<a class="headerlink" href="#module-TensorToolbox" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="TensorToolbox.core.TTmat">
+<em class="property">class </em><code class="descclassname">TensorToolbox.core.</code><code class="descname">TTmat</code><span class="sig-paren">(</span><em>A</em>, <em>nrows</em>, <em>ncols</em>, <em>is_sparse=None</em>, <em>sparse_ranks=None</em>, <em>store_location=''</em>, <em>store_object=None</em>, <em>store_freq=1</em>, <em>store_overwrite=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/TensorTrainMat.html#TTmat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TTmat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor of multidimensional matrix in Tensor Train format</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>A</strong> (<a class="reference internal" href="api-candecomp.html#TensorToolbox.core.Candecomp" title="TensorToolbox.core.Candecomp"><em>Candecomp</em></a><em>,</em><em>ndarray</em><em>,</em><em>TT</em>) – Available input formats are Candecomp, full tensor in numpy.ndarray, Tensor Train structure (list of cores), list of sparse matrices of sizes (r_{i-1}*r_{i}*nrows x ncols) (used for fast dot product - limited support for other functionalities)</li>
+<li><strong>nrows</strong> (<em>list</em><em>,</em><a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – If int then the row size will be the same in all dimensions, if list then len(nrows) == len(self.TT) (numer of cores) and row size will change for each dimension.</li>
+<li><strong>ncols</strong> (<em>list</em><em>,</em><a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – If int then the column size will be the same in all dimensions, if list then len(ncols) == len(self.TT) (numer of cores) and column size will change for each dimension.</li>
+<li><strong>is_sparse</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – [default == False] if True it uses sparsity to accelerate some computations</li>
+<li><strong>sparse_ranks</strong> (<em>list</em>) – [default==None] mandatory argument when A is a list of sparse matrices. It contains integers listing the TT-ranks of the matrix.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">the method __getitem__ is not overwritten, thus the indices used to access the tensor refer to the flatten versions of the matrices composing the matrix tensor.</p>
+</div>
+<dl class="method">
+<dt id="TensorToolbox.core.TTmat.build">
+<code class="descname">build</code><span class="sig-paren">(</span><em>eps=1e-10</em>, <em>method='svd'</em>, <em>rs=None</em>, <em>fix_rank=False</em>, <em>Jinit=None</em>, <em>delta=0.0001</em>, <em>maxit=100</em>, <em>mv_eps=1e-06</em>, <em>mv_maxit=100</em>, <em>max_ranks=None</em>, <em>kickrank=2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/TensorToolbox/core/TensorTrainMat.html#TTmat.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TensorToolbox.core.TTmat.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Common interface for the construction of the approximation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – [default == 1e-10] For method==’svd’: precision with which to approximate the input tensor. For method==’ttcross’: TT-rounding tolerance for rank-check.</li>
+<li><strong>method</strong> (<a class="reference external" href="https://docs.python.org/2/library/string.html#module-string" title="(in Python v2.7)"><em>string</em></a>) – ‘svd’ use singular value decomposition to construct the TT representation <a class="reference internal" href="zrefs.html#oseledets2011" id="id1">[1]</a>, ‘ttcross’ use low rank skeleton approximation to construct the TT representation <a class="reference internal" href="zrefs.html#oseledets2010" id="id2">[2]</a>, ‘ttdmrg’ uses Tensor Train Renormalization Cross to construct the TT representation <a class="reference internal" href="zrefs.html#savostyanov2011" id="id3">[3]</a><a class="reference internal" href="zrefs.html#savostyanov2013" id="id4">[4]</a>, ‘ttdmrgcross’ uses ‘ttdmrg’ with ‘ttcross’ approximation of supercores</li>
+<li><strong>rs</strong> (<em>list</em>) – list of integer ranks of different cores. If <code class="docutils literal"><span class="pre">None</span></code> then the incremental TTcross approach will be used. (method==’ttcross’)</li>
+<li><strong>fix_rank</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – determines whether the rank is allowed to be increased (method==’ttcross’)</li>
+<li><strong>Jinit</strong> (<em>list</em>) – list of list of integers containing the r starting columns in the lowrankapprox routine for each core. If <code class="docutils literal"><span class="pre">None</span></code> then pick them randomly. (method==’ttcross’)</li>
+<li><strong>delta</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – accuracy parameter in the TT-cross routine (method==’ttcross’). It is the relative error in Frobenious norm between two successive iterations.</li>
+<li><strong>maxit</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – maximum number of iterations in the lowrankapprox routine (method==’ttcross’)</li>
+<li><strong>mv_eps</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – accuracy parameter for each usage of the maxvol algorithm (method==’ttcross’)</li>
+<li><strong>mv_maxit</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – maximum number of iterations in the maxvol routine (method==’ttcross’)</li>
+<li><strong>fix_rank</strong> – Whether the rank is allowed to increase</li>
+<li><strong>max_ranks</strong> (<em>list</em>) – Maximum ranks to be used to limit the trunaction rank due to <code class="docutils literal"><span class="pre">eps</span></code>. The first and last elements of the list must be <code class="docutils literal"><span class="pre">1</span></code>, e.g. <code class="docutils literal"><span class="pre">[1,...,1]</span></code>. Default: <code class="docutils literal"><span class="pre">None</span></code>.</li>
+<li><strong>kickrank</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – rank overshooting for ‘ttdmrg’</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api-qttvec.html" title="Quantics Tensor Train Vectors"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="api-ttvec.html" title="Tensor Train Vectors"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TensorToolbox 0.3.3 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="api.html" >API</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013-2015, Daniele Bigoni.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.6.
+    </div>
+  </body>
+</html>
