@@ -1,4 +1,5 @@
 import numpy as np
+import progressbar
 
 class als_tt:
     def __init__(self, rank, gridIndices, fcn, eta, lda):
@@ -27,12 +28,17 @@ class als_tt:
 
         self.approx.append(np.random.rand(rank, len(gridIndices[-1]), 1))
 
+        # Scale down the random values
+        for mat in self.approx:
+           mat -= 0.5
+
     def recurse(self, idx, curpoint):
         if idx == self.dim:
-            self.sgd_update(curpoint)
+            self.sgd_update(curpoint.astype(int))
         else:
             # Here, shuffle the points in some random order for the SGD
-            indices = np.random.shuffle([i for i in range(len(self.gridIndices[idx]))])
+            indices = [i for i in range(len(self.gridIndices[idx]))]
+            np.random.shuffle(indices)
 
             for i in indices:
                 curpoint[idx] = i
@@ -42,19 +48,18 @@ class als_tt:
         res = np.identity(1)
 
         for i in range(self.dim):
-            res = res * self.approx[i][:, point[i], :]
+            res = res * self.approx[i][:, int(point[i]), :]
 
         return res[0, 0]
 
     def compute_error(self):
         return self.err_recurse(0, np.zeros(self.dim))
+        #/ np.prod([len(x) for x in self.gridIndices])
 
     def err_recurse(self, idx, point):
         err = 0
         if idx == self.dim:
-            print(self.gridIndices)
             gridpt = [self.gridIndices[i][0] for i in range(self.dim)]
-            print(gridpt)
             fval = self.fcn(gridpt)
             err = (fval - self.get(point)) ** 2
         else:
@@ -86,31 +91,37 @@ class als_tt:
 
             # Compute the tensor product for use in the gradient.
             outerprod = np.outer(forward_partial, self.reversePartials[i + 1])
-
-            # ALS / SGD update: the term w/ coefficient self.lda is regularization
-            self.approx[i][:, point[i], :] -= self.eta * ((y_approx - fval) * np.matrix(outerprod) + (self.lda * np.matrix(self.approx[i][:, point[i], :])))
+            # ALS / SGD update: the term w/ coefficient self.lda is regularization w/ Froebenius norm
+            self.approx[i][:, point[i], :] -= self.eta * ((fval - y_approx) * np.matrix(outerprod) + (self.lda * np.matrix(self.approx[i][:, point[i], :])))
 
             # Update the forward partial matrix
             forward_partial = forward_partial * np.matrix(self.approx[i][:, point[i], :])
 
     def build(self, num_iter):
-        for i in range(num_iter):
+        for i in progressbar.progressbar(range(num_iter)):
             self.recurse(0, np.zeros(self.dim))
 
 
 def polytest(params):
-    return params[0] ** 2 + params[1] ** 2 + params[2] ** 2
+    return 2 * params[0] + 3 * params[1]
 
-grid = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
-        [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
-        [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
-        [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]]
+grid = [[1.0, 2.0, 3.0, 4.0],
+        [1.0, 2.0, 3.0, 4.0]]
 
 if __name__ == '__main__':
-    test = als_tt(3, grid, polytest, 0.2, 0.001)
-    # print(test.approx)
-    # test.build(1)
-    test.sgd_update(np.array([1, 1, 1, 1]))
+    test = als_tt(3, grid, polytest, 0.1, 0.0000)
     print(test.compute_error())
-    # Compute the approximation error
+    # test.build(30)
+
+    for i in range(1):
+        test.sgd_update([0, 0])
+    #test.sgd_update([0, 0, 0, 1])
+    print(test.compute_error())
+    print("=============")
+    print(test.approx)
+
+    #print(test.get([0, 0, 0, 0]))
+    #gridpt = [test.gridIndices[i][0] for i in range(test.dim)]
+    #print(test.fcn(gridpt))
+
 
