@@ -78,20 +78,13 @@ class als_tt:
         fval = self.fcn(gridpt)
 
         self.reversePartials = [np.identity(1)]
+
         # Precompute matrix products so we don't redo the same calculation over and over
         for i in reversed(range(self.dim)):
             self.reversePartials.append(np.matrix(self.approx[i][:, point[i], :]) * self.reversePartials[-1])
 
         grads = []
         self.reversePartials.reverse()
-
-        # U = self.approx[0][0, point[0], :]
-        # V = self.approx[1][:, point[1], 0]
-
-        # gradU = self.eta * (-V.T * (fval - np.dot(U, V)))
-        # gradV = self.eta * (-U.T * (fval - np.dot(U, V)))
-
-        # print(self.approx[1])
 
         for i in range(self.dim):
             # Compute the approximation
@@ -100,23 +93,13 @@ class als_tt:
             # Compute the tensor product for use in the gradient.
             outerprod = np.outer(forward_partial, self.reversePartials[i + 1])
             # ALS / SGD update: the term w/ coefficient self.lda is regularization w/ Froebenius norm
-            grads.append(- self.eta * ((fval - y_approx) * np.matrix(outerprod)))
+            grads.append(- self.eta * ((fval - y_approx) * np.matrix(outerprod)) + (self.lda * np.matrix(self.approx[i][:, point[i], :])))
 
             # Update the forward partial matrix
             forward_partial = np.matmul(forward_partial, np.matrix(self.approx[i][:, point[i], :]))
 
         for i in range(len(grads)):
-            # Debugging purposes only...
-            # print("Computed Gradient: ")
-            # print(grads[i])
-            #if i == 0:
-            #    print(gradU)
-            #else:
-            #    print(gradV)
             self.approx[i][:, point[i], :] -= grads[i]
-
-        #self.approx[0][0, point[0], :] -= gradU
-        #self.approx[1][:, point[1], 0] -= gradV
 
 
     def build(self, num_iter):
@@ -125,14 +108,14 @@ class als_tt:
 
 
 def polytest(params):
-    return 2 * params[0] + 3 * params[1] ** 3 + 2 * params[2] ** 2
+    return 2 * params[0] ** 2 + 3 * params[1] ** 3 + 5 * params[2] ** 2
 
-grid = [[1.0, 2.0, 3.0, 4.0],
-        [1.0, 2.0, 3.0, 4.0],
-        [1.0, 2.0, 3.0, 4.0]]
+grid = [[1.0, 2.0, 3.0, 3.5, 4.0, 5.0],
+        [1.0, 2.0, 3.0, 3.5, 4.0, 5.0],
+        [1.0, 2.0, 3.0, 3.5, 4.0, 5.0]]
 
 if __name__ == '__main__':
-    test = als_tt(3, grid, polytest, 0.0005, 0.0000)
+    test = als_tt(3, grid, polytest, 0.0001, 0.0000)
 
     print(test.compute_error())
     test.build(500)
