@@ -18,7 +18,7 @@ class als_tt:
 
         self.approx = []
         self.dim = len(gridIndices)
-        self.approx.append(np.random.rand(len(gridIndices[0]), 1, rank))
+        self.approx.append(np.matrix(np.random.rand(len(gridIndices[0]), 1, rank)))
 
         for i in range(self.dim - 2):
             self.approx.append(np.array(np.random.rand(len(gridIndices[i + 1]), rank, rank)))
@@ -114,55 +114,58 @@ class als_tt:
 
     def rmsprop_update(self, point):
         '''
-        Performs the ada-delta update instead of Vanilla SGD. This solver should converge a lot faster than
+        Performs the RMSProp update instead of Vanilla SGD. This solver should converge a lot faster than
         just SGD.
         :param point:
         :return:
         '''
-        forward_partial = np.identity(1)
         gridpt = [self.gridIndices[i][point[i]] for i in range(self.dim)]
         fval = self.fcn(gridpt)
 
-        self.reversePartials = [np.identity(1)]
-
         # Precompute matrix products so we don't redo the same calculation over and over
         for i in reversed(range(self.dim)):
-            self.reversePartials.append(np.matrix(self.approx[i][point[i]]) * self.reversePartials[-1])
+            np.matmul(self.approx[i][point[i]], self.reversePartials[i+1], out=self.reversePartials[i])
 
-        grads = []
-        self.reversePartials.reverse()
         gt_sq = 0
-        theta_sq = 0
+        # theta_sq = 0
 
         for i in range(self.dim):
-            # Compute the approximation
-            y_approx = np.matmul(forward_partial, self.reversePartials[i])[0, 0]
+            # Compute the approximation at the specified grid point
 
-            # Compute the tensor product for use in the gradient.
-            outerprod = np.outer(forward_partial, self.reversePartials[i + 1])
 
-            # ALS / SGD update: the term w/ coefficient self.lda is regularization w/ Froebenius norm
-            grads.append(- 1.0 * (
-            ((fval - y_approx) * np.matrix(outerprod)) + (self.lda * np.matrix(self.approx[i][point[i]]))))
+            # Compute the gradient
+            if i == 0:
+                np.outer(np.identity(1), self.reversePartials[i + 1], out=self.grads[i])
+                y_approx = np.matmul(np.identity(1), self.reversePartials[i])[0, 0]
+            else:
+                np.outer(self.forward_partial, self.reversePartials[i + 1], out=self.grads[i])
+                y_approx = np.matmul(self.forward_partial, self.reversePartials[i])[0, 0]
+
+            self.grads[i] *= -1.0 * (fval - y_approx)
+            self.grads[i] -= self.lda * self.approx[i][point[i]]
 
             # Add to the accumulated gradient value
-            gt_sq += np.sum(np.square(grads[-1]))
+            gt_sq += np.sum(np.square(self.grads[i]))
 
             # Update the forward partial matrix
-            forward_partial = np.matmul(forward_partial, np.matrix(self.approx[i][point[i]]))
+
+            if i == 0:
+                np.matmul(np.identity(1), self.approx[i][point[i]], out=self.forward_partial)
+            elif i < self.dim - 1:
+                np.matmul(self.forward_partial, self.approx[i][point[i]], out=self.forward_partial)
 
         # Perform the RMSProp gradient accumulation update
         self.e_g2 = self.gamma * self.e_g2 + (1 - self.gamma) * gt_sq
 
-
         # Perform the parameter update
-        for i in range(len(grads)):
-            grads[i] *= self.eta / np.sqrt(self.e_g2 + self.epsilon)
-            theta_sq += np.sum(np.square(grads[i]))
-            self.approx[i][point[i]] -= grads[i]
+        for i in range(self.dim):
+            self.grads[i] *= self.eta / np.sqrt(self.e_g2 + self.epsilon)
+            self.approx[i][point[i]] -= self.grads[i]
+            # theta_sq += np.sum(np.square(self.grads[i])) Residual leftover from Adadelta
 
-        # Accumulate the updates themselves; this step performed out-of-order with the one before it, see alg. 1
-        self.e_theta2 = self.gamma * self.e_theta2 + (1 - self.gamma) * theta_sq
+
+        # Accumulate the updates; this step performed out-of-order with the one before it, see alg. 1
+        # self.e_theta2 = self.gamma * self.e_theta2 + (1 - self.gamma) * theta_sq
 
 
     def build_sgd(self, num_iter):
@@ -172,10 +175,30 @@ class als_tt:
         print("\nApproximation Complete!")
 
     def build_rmsprop(self, num_iter):
+
+        # Pre-initialize the array of gradients
+        self.grads = []
+        self.grads.append(np.zeros((1, self.rank), dtype=float))
+
+        for i in range(self.dim - 2):
+            self.grads.append(np.zeros((self.rank, self.rank), dtype=float))
+
+        self.grads.append(np.zeros((self.rank, 1), dtype=float))
+
+        # Initialize the forward partial product
+        self.forward_partial = np.zeros((1, self.rank), dtype=float)
+
+        # Initialize a list for the reverse partial products
+        self.reversePartials = [np.identity(1)]
+        for _ in range(self.dim - 1):
+            self.reversePartials.append(np.matrix(np.zeros((self.rank, 1), dtype=float)))
+        self.reversePartials.append(np.identity(1))
+
+
         print("Constructing Approximation with RMSProp...\n")
 
         self.epsilon = 1e-8 # Avoid division-by-zero error terms
-        self.gamma = 0.95   # RMSProp decay term
+        self.gamma = 0.90   # RMSProp decay term
 
         self.e_g2 = 0
         self.e_theta2 = 0
@@ -192,17 +215,17 @@ class als_tt:
 
 # Define a very simple test function and a small grid
 def polytest(params):
-    return 2 * params[0] ** 2 + 3 * params[1] ** 3 + 5 * params[2] ** 4
+    return 2 * params[0] ** 2 + 3 * params[1] ** 3 + 5 * params[2] ** 2
 
 grid = [[1.0, 2.0, 3.0, 3.5, 4.0, 5.0],
         [1.0, 2.0, 3.0, 3.5, 4.0, 5.0],
         [1.0, 2.0, 3.0, 3.5, 4.0, 5.0]]
 
 if __name__ == '__main__':
-    test = als_tt(3, grid, polytest, 0.008, 0.0000)
+    test = als_tt(10, grid, polytest, 0.005, 0.0000)
 
     print(test.compute_error())
-    test.build_rmsprop(200)
+    test.build_rmsprop(300)
 
     print(test.compute_error())
 
