@@ -14,24 +14,45 @@ class als_tt:
         self.rank = rank
         self.gridIndices = gridIndices
         self.fcn = fcn
-
+        self.rmse = None
 
         self.approx = []
         self.dim = len(gridIndices)
-        self.approx.append(np.random.rand(1, len(gridIndices[0]), rank))
+        self.approx.append(np.random.rand(len(gridIndices[0]), 1, rank))
 
         for i in range(self.dim - 2):
-            self.approx.append(np.array(np.random.rand(rank, len(gridIndices[i + 1]), rank)))
+            self.approx.append(np.array(np.random.rand(len(gridIndices[i + 1]), rank, rank)))
 
-        self.approx.append(np.random.rand(rank, len(gridIndices[-1]), 1))
+        self.approx.append(np.random.rand(len(gridIndices[-1]), rank, 1))
 
         # Scale down the random values
         for mat in self.approx:
            mat -= 0.5
 
-    def recurse(self, idx, curpoint):
+    def get(self, point):
+        '''
+        Returns the value of the approximation at the specified grid point.
+
+        :param point: The grid point to evaluate at (given as an integer-tuple)
+        :return: The value of the TT-approximation at the specified grid point
+        '''
+        res = np.identity(1)
+
+        for i in range(self.dim):
+            res = np.matmul(res, self.approx[i][int(point[i])])
+
+        return res[0, 0]
+
+    def recurse(self, idx, curpoint, fcn):
+        '''
+        Helper for apply-function, recursively stepping through each dimension of the grid
+        :param idx:
+        :param curpoint:
+        :param fcn:
+        :return:
+        '''
         if idx == self.dim:
-            self.sgd_update(curpoint.astype(int))
+            fcn(curpoint.astype(int))
         else:
             # Here, shuffle the points in some random order for the SGD
             indices = [i for i in range(len(self.gridIndices[idx]))]
@@ -39,33 +60,22 @@ class als_tt:
 
             for i in indices:
                 curpoint[idx] = i
-                self.recurse(idx + 1, curpoint)
+                self.recurse(idx + 1, curpoint, fcn)
 
-    def get(self, point):
-        res = np.identity(1)
+    def applyFunction(self, fcn):
+        '''
+        Helper that applies the specified function at every point on the grid.
 
-        for i in range(self.dim):
-            res = np.matmul(res, self.approx[i][:, int(point[i]), :])
 
-        return res[0, 0]
+        :param fcn: The function to apply
+        :return void
+        '''
+        self.recurse(0, np.zeros(self.dim), fcn)
 
-    def compute_error(self):
-        return self.err_recurse(0, np.zeros(self.dim)) / np.prod([len(x) for x in self.gridIndices])
+    def add_error(self, point):
+        gridpt = [self.gridIndices[i][point[i]] for i in range(self.dim)]
+        self.rmse += (self.get(point) - self.fcn(gridpt)) ** 2
 
-    def err_recurse(self, idx, point):
-        err = 0
-        if idx == self.dim:
-            gridpt = [self.gridIndices[i][int(point[i])] for i in range(self.dim)]
-            fval = self.fcn(
-                gridpt)
-            err = (fval - self.get(point)) ** 2
-            # print("Point: {}, fval: {}, approx: {}".format(gridpt, fval, self.get(point)))
-        else:
-            for i in range(len(self.gridIndices[idx])):
-                point[idx] = i
-                err += self.err_recurse(idx + 1, point)
-
-        return err
 
     def sgd_update(self, point):
         '''
@@ -81,7 +91,7 @@ class als_tt:
 
         # Precompute matrix products so we don't redo the same calculation over and over
         for i in reversed(range(self.dim)):
-            self.reversePartials.append(np.matrix(self.approx[i][:, point[i], :]) * self.reversePartials[-1])
+            self.reversePartials.append(np.matrix(self.approx[i][point[i]]) * self.reversePartials[-1])
 
         grads = []
         self.reversePartials.reverse()
@@ -92,36 +102,108 @@ class als_tt:
 
             # Compute the tensor product for use in the gradient.
             outerprod = np.outer(forward_partial, self.reversePartials[i + 1])
+
             # ALS / SGD update: the term w/ coefficient self.lda is regularization w/ Froebenius norm
-            grads.append(- self.eta * ((fval - y_approx) * np.matrix(outerprod)) + (self.lda * np.matrix(self.approx[i][:, point[i], :])))
+            grads.append(- self.eta * (((fval - y_approx) * np.matrix(outerprod)) + (self.lda * np.matrix(self.approx[i][point[i]]))))
 
             # Update the forward partial matrix
-            forward_partial = np.matmul(forward_partial, np.matrix(self.approx[i][:, point[i], :]))
+            forward_partial = np.matmul(forward_partial, np.matrix(self.approx[i][point[i]]))
 
         for i in range(len(grads)):
-            self.approx[i][:, point[i], :] -= grads[i]
+            self.approx[i][point[i]] -= grads[i]
+
+    def rmsprop_update(self, point):
+        '''
+        Performs the ada-delta update instead of Vanilla SGD. This solver should converge a lot faster than
+        just SGD.
+        :param point:
+        :return:
+        '''
+        forward_partial = np.identity(1)
+        gridpt = [self.gridIndices[i][point[i]] for i in range(self.dim)]
+        fval = self.fcn(gridpt)
+
+        self.reversePartials = [np.identity(1)]
+
+        # Precompute matrix products so we don't redo the same calculation over and over
+        for i in reversed(range(self.dim)):
+            self.reversePartials.append(np.matrix(self.approx[i][point[i]]) * self.reversePartials[-1])
+
+        grads = []
+        self.reversePartials.reverse()
+        gt_sq = 0
+        theta_sq = 0
+
+        for i in range(self.dim):
+            # Compute the approximation
+            y_approx = np.matmul(forward_partial, self.reversePartials[i])[0, 0]
+
+            # Compute the tensor product for use in the gradient.
+            outerprod = np.outer(forward_partial, self.reversePartials[i + 1])
+
+            # ALS / SGD update: the term w/ coefficient self.lda is regularization w/ Froebenius norm
+            grads.append(- 1.0 * (
+            ((fval - y_approx) * np.matrix(outerprod)) + (self.lda * np.matrix(self.approx[i][point[i]]))))
+
+            # Add to the accumulated gradient value
+            gt_sq += np.sum(np.square(grads[-1]))
+
+            # Update the forward partial matrix
+            forward_partial = np.matmul(forward_partial, np.matrix(self.approx[i][point[i]]))
+
+        # Perform the RMSProp gradient accumulation update
+        self.e_g2 = self.gamma * self.e_g2 + (1 - self.gamma) * gt_sq
 
 
-    def build(self, num_iter):
+        # Perform the parameter update
+        for i in range(len(grads)):
+            grads[i] *= self.eta / np.sqrt(self.e_g2 + self.epsilon)
+            theta_sq += np.sum(np.square(grads[i]))
+            self.approx[i][point[i]] -= grads[i]
+
+        # Accumulate the updates themselves; this step performed out-of-order with the one before it, see alg. 1
+        self.e_theta2 = self.gamma * self.e_theta2 + (1 - self.gamma) * theta_sq
+
+
+    def build_sgd(self, num_iter):
+        print("Constructing Approximation with SGD...\n")
         for i in progressbar.progressbar(range(num_iter)):
-            self.recurse(0, np.zeros(self.dim))
+            self.applyFunction(self.sgd_update)
+        print("\nApproximation Complete!")
+
+    def build_rmsprop(self, num_iter):
+        print("Constructing Approximation with RMSProp...\n")
+
+        self.epsilon = 1e-8 # Avoid division-by-zero error terms
+        self.gamma = 0.95   # RMSProp decay term
+
+        self.e_g2 = 0
+        self.e_theta2 = 0
+
+        for i in progressbar.progressbar(range(num_iter)):
+            self.applyFunction(self.rmsprop_update)
+        print("\nApproximation Complete!")
+
+    def compute_error(self):
+        self.rmse = 0
+        self.applyFunction(self.add_error)
+        return np.sqrt(self.rmse) / np.prod([len(x) for x in self.gridIndices])
 
 
+# Define a very simple test function and a small grid
 def polytest(params):
-    return 2 * params[0] ** 2 + 3 * params[1] ** 3 + 5 * params[2] ** 2
+    return 2 * params[0] ** 2 + 3 * params[1] ** 3 + 5 * params[2] ** 4
 
 grid = [[1.0, 2.0, 3.0, 3.5, 4.0, 5.0],
         [1.0, 2.0, 3.0, 3.5, 4.0, 5.0],
         [1.0, 2.0, 3.0, 3.5, 4.0, 5.0]]
 
 if __name__ == '__main__':
-    test = als_tt(3, grid, polytest, 0.0001, 0.0000)
+    test = als_tt(3, grid, polytest, 0.008, 0.0000)
 
     print(test.compute_error())
-    test.build(500)
+    test.build_rmsprop(200)
+
     print(test.compute_error())
 
     print("=============")
-
-
-
