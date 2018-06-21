@@ -1,5 +1,6 @@
 import numpy as np
 import progressbar
+import cProfile
 
 class als_tt:
     def __init__(self, rank, gridIndices, fcn, eta, lda):
@@ -28,6 +29,27 @@ class als_tt:
         # Scale down the random values
         for mat in self.approx:
            mat -= 0.5
+
+
+        # RMS Prop / SGD initialization
+
+        # Pre-initialize the array of gradients
+        self.grads = []
+        self.grads.append(np.zeros((1, self.rank), dtype=float))
+
+        for i in range(self.dim - 2):
+            self.grads.append(np.zeros((self.rank, self.rank), dtype=float))
+
+        self.grads.append(np.zeros((self.rank, 1), dtype=float))
+
+        # Initialize the forward partial product
+        self.forward_partial = np.zeros((1, self.rank), dtype=float)
+
+        # Initialize a list for the reverse partial products
+        self.reversePartials = [np.identity(1)]
+        for _ in range(self.dim - 1):
+            self.reversePartials.append(np.matrix(np.zeros((self.rank, 1), dtype=float)))
+        self.reversePartials.append(np.identity(1))
 
     def get(self, point):
         '''
@@ -83,34 +105,7 @@ class als_tt:
         to a single point in the tensor, whose indices are specified in
         the argument 'point'.
         '''
-        forward_partial = np.identity(1)
-        gridpt = [self.gridIndices[i][point[i]] for i in range(self.dim)]
-        fval = self.fcn(gridpt)
-
-        self.reversePartials = [np.identity(1)]
-
-        # Precompute matrix products so we don't redo the same calculation over and over
-        for i in reversed(range(self.dim)):
-            self.reversePartials.append(np.matrix(self.approx[i][point[i]]) * self.reversePartials[-1])
-
-        grads = []
-        self.reversePartials.reverse()
-
-        for i in range(self.dim):
-            # Compute the approximation
-            y_approx = np.matmul(forward_partial, self.reversePartials[i])[0, 0]
-
-            # Compute the tensor product for use in the gradient.
-            outerprod = np.outer(forward_partial, self.reversePartials[i + 1])
-
-            # ALS / SGD update: the term w/ coefficient self.lda is regularization w/ Froebenius norm
-            grads.append(- self.eta * (((fval - y_approx) * np.matrix(outerprod)) + (self.lda * np.matrix(self.approx[i][point[i]]))))
-
-            # Update the forward partial matrix
-            forward_partial = np.matmul(forward_partial, np.matrix(self.approx[i][point[i]]))
-
-        for i in range(len(grads)):
-            self.approx[i][point[i]] -= grads[i]
+        pass
 
     def rmsprop_update(self, point):
         '''
@@ -130,9 +125,6 @@ class als_tt:
         # theta_sq = 0
 
         for i in range(self.dim):
-            # Compute the approximation at the specified grid point
-
-
             # Compute the gradient
             if i == 0:
                 np.outer(np.identity(1), self.reversePartials[i + 1], out=self.grads[i])
@@ -174,27 +166,7 @@ class als_tt:
             self.applyFunction(self.sgd_update)
         print("\nApproximation Complete!")
 
-    def build_rmsprop(self, num_iter):
-
-        # Pre-initialize the array of gradients
-        self.grads = []
-        self.grads.append(np.zeros((1, self.rank), dtype=float))
-
-        for i in range(self.dim - 2):
-            self.grads.append(np.zeros((self.rank, self.rank), dtype=float))
-
-        self.grads.append(np.zeros((self.rank, 1), dtype=float))
-
-        # Initialize the forward partial product
-        self.forward_partial = np.zeros((1, self.rank), dtype=float)
-
-        # Initialize a list for the reverse partial products
-        self.reversePartials = [np.identity(1)]
-        for _ in range(self.dim - 1):
-            self.reversePartials.append(np.matrix(np.zeros((self.rank, 1), dtype=float)))
-        self.reversePartials.append(np.identity(1))
-
-
+    def build_rmsprop(self, tol_fraction):
         print("Constructing Approximation with RMSProp...\n")
 
         self.epsilon = 1e-8 # Avoid division-by-zero error terms
@@ -203,8 +175,27 @@ class als_tt:
         self.e_g2 = 0
         self.e_theta2 = 0
 
-        for i in progressbar.progressbar(range(num_iter)):
+        old_err = self.compute_error()
+        print("Initial RMSE: {}".format(old_err))
+        print("Minimum Percent Error Decrease to Continue Loop: {}%".format(tol_fraction * 100))
+
+        i = 0
+        while True:
+            if i % 5 == 1:
+                new_err = self.compute_error()
+                delta_fraction = (old_err - new_err) / old_err
+                print("Iteration: {}, Error: {}, Error Decrease Percent: {}.%".format(i, new_err, delta_fraction * 100))
+
+                # Delta too low? Break the loop
+                if i > 40 and delta_fraction < tol_fraction:
+                    break
+
+                old_err = new_err
+
             self.applyFunction(self.rmsprop_update)
+            i += 1
+
+        print("Final RMSE: {}".format(old_err))
         print("\nApproximation Complete!")
 
     def compute_error(self):
@@ -215,18 +206,15 @@ class als_tt:
 
 # Define a very simple test function and a small grid
 def polytest(params):
-    return 2 * params[0] ** 2 + 3 * params[1] ** 3 + 5 * params[2] ** 2
+    return 2 * params[0] ** 2 + 3 * params[1] * params[2] ** 2 + 5 * params[2] ** 2 * params[3] ** 4
 
-grid = [[1.0, 2.0, 3.0, 3.5, 4.0, 5.0],
-        [1.0, 2.0, 3.0, 3.5, 4.0, 5.0],
-        [1.0, 2.0, 3.0, 3.5, 4.0, 5.0]]
+grid = [[1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0],
+        [1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0],
+        [1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0],
+        [1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0]]
 
 if __name__ == '__main__':
-    test = als_tt(10, grid, polytest, 0.005, 0.0000)
-
-    print(test.compute_error())
-    test.build_rmsprop(300)
-
-    print(test.compute_error())
+    test = als_tt(3, grid, polytest, 0.005, 0.000)
+    test.build_rmsprop(0.01)
 
     print("=============")
