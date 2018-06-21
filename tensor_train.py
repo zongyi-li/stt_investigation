@@ -2,11 +2,14 @@ import numpy as np
 import progressbar
 import cProfile
 
-class als_tt:
+class tensor_train:
     def __init__(self, rank, gridIndices, fcn, eta, lda):
         '''
         gridIndices must have dimension at least 2.
 
+        rank: The canonical rank of the approximation
+        gridIndices: The grid to evaluate the function on
+        fcn: The function to call to get the entries of the high-dimensional tensor
         lda: The regularization parameter
         eta: The learning rate for SGD
         '''
@@ -105,7 +108,36 @@ class als_tt:
         to a single point in the tensor, whose indices are specified in
         the argument 'point'.
         '''
-        pass
+        gridpt = [self.gridIndices[i][point[i]] for i in range(self.dim)]
+        fval = self.fcn(gridpt)
+
+        # Precompute matrix products so we don't redo the same calculation over and over
+        for i in reversed(range(self.dim)):
+            np.matmul(self.approx[i][point[i]], self.reversePartials[i + 1], out=self.reversePartials[i])
+
+        for i in range(self.dim):
+            # Compute the gradient
+            if i == 0:
+                np.outer(np.identity(1), self.reversePartials[i + 1], out=self.grads[i])
+                y_approx = np.matmul(np.identity(1), self.reversePartials[i])[0, 0]
+            else:
+                np.outer(self.forward_partial, self.reversePartials[i + 1], out=self.grads[i])
+                y_approx = np.matmul(self.forward_partial, self.reversePartials[i])[0, 0]
+
+            self.grads[i] *= -1.0 * (fval - y_approx)
+            self.grads[i] -= self.lda * self.approx[i][point[i]]
+
+            # Update the forward partial matrix
+
+            if i == 0:
+                np.matmul(np.identity(1), self.approx[i][point[i]], out=self.forward_partial)
+            elif i < self.dim - 1:
+                np.matmul(self.forward_partial, self.approx[i][point[i]], out=self.forward_partial)
+
+        # Perform the parameter update
+        for i in range(self.dim):
+            self.grads[i] *= self.eta
+            self.approx[i][point[i]] -= self.grads[i]
 
     def rmsprop_update(self, point):
         '''
@@ -160,11 +192,39 @@ class als_tt:
         # self.e_theta2 = self.gamma * self.e_theta2 + (1 - self.gamma) * theta_sq
 
 
-    def build_sgd(self, num_iter):
+    def build_sgd(self, tol_fraction):
         print("Constructing Approximation with SGD...\n")
-        for i in progressbar.progressbar(range(num_iter)):
+        old_err = self.compute_error()
+        new_err = None
+
+        errorValues = []
+
+        print("Initial RMSE: {}".format(old_err))
+        print("Minimum Percent Error Decrease to Continue Loop Past 40 Iterations: {}%".format(tol_fraction * 100))
+
+        i = 0
+        # Keep 200 as an upper-bound on the number of iterations
+        while True and i < 200:
+            # Compute the error every 5 iterations, test to break the loop, and store the computed error value
+            if i % 5 == 1:
+                new_err = self.compute_error()
+                delta_fraction = (old_err - new_err) / old_err
+                print("Iteration: {}, Error: {}, Error Decrease Percent: {}.%".format(i, new_err, delta_fraction * 100))
+
+                # Delta too low? Break the loop
+                if i > 50 and delta_fraction < tol_fraction:
+                    break
+
+                old_err = new_err
+                errorValues.append([i, new_err])
+
             self.applyFunction(self.sgd_update)
+            i += 1
+
+        print("Final RMSE: {}".format(new_err))
         print("\nApproximation Complete!")
+
+        return np.matrix(errorValues)
 
     def build_rmsprop(self, tol_fraction):
         print("Constructing Approximation with RMSProp...\n")
@@ -176,11 +236,17 @@ class als_tt:
         self.e_theta2 = 0
 
         old_err = self.compute_error()
+        new_err = None
+
+        errorValues=[]
+
         print("Initial RMSE: {}".format(old_err))
-        print("Minimum Percent Error Decrease to Continue Loop: {}%".format(tol_fraction * 100))
+        print("Minimum Percent Error Decrease to Continue Loop Past 40 Iterations: {}%".format(tol_fraction * 100))
 
         i = 0
-        while True:
+        # Keep 200 as an upper-bound on the number of iterations
+        while True and i < 200:
+            # Compute the error every 5 iterations, test to break the loop, and store the computed error value
             if i % 5 == 1:
                 new_err = self.compute_error()
                 delta_fraction = (old_err - new_err) / old_err
@@ -191,18 +257,24 @@ class als_tt:
                     break
 
                 old_err = new_err
+                errorValues.append([i, new_err])
 
             self.applyFunction(self.rmsprop_update)
             i += 1
 
-        print("Final RMSE: {}".format(old_err))
+        print("Final RMSE: {}".format(new_err))
         print("\nApproximation Complete!")
+
+        return np.matrix(errorValues)
 
     def compute_error(self):
         self.rmse = 0
         self.applyFunction(self.add_error)
-        return np.sqrt(self.rmse) / np.prod([len(x) for x in self.gridIndices])
+        return np.sqrt(self.rmse / np.prod([len(x) for x in self.gridIndices]))
 
+
+# =================================================================================
+# Small-scale testing...
 
 # Define a very simple test function and a small grid
 def polytest(params):
@@ -214,7 +286,7 @@ grid = [[1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.
         [1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0]]
 
 if __name__ == '__main__':
-    test = als_tt(3, grid, polytest, 0.005, 0.000)
+    test = tensor_train(3, grid, polytest, 0.005, 0.000)
     test.build_rmsprop(0.01)
 
     print("=============")
