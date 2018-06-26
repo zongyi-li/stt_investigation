@@ -60,9 +60,8 @@ class Grid:
         self.pointArrayHelper(0, np.zeros(len(gridDims)), arr, arrIdx)
         return arr
 
-# Small-scale testing...
 
-# Define a very simple test function and a small grid
+# Define a very simple test function, and a utility to return grids of varying sizes
 def polytest4(params):
     return 2 * params[0] ** 2 + 3 * params[1] * params[2] ** 2 + 5 * params[2] ** 2 * params[3] ** 4
 
@@ -78,6 +77,3 @@ def getEquispaceGrid(n_dim, rng, subdivisions):
     subdivisions: Number of subdivisions of the grid to construct
     '''
     return Grid(np.array([np.array(range(subdivisions + 1)) * rng * 1.0 / subdivisions for i in range(n_dim)]))
-
-if __name__ == '__main__':
-    print(simpleGrid().getPointArray())

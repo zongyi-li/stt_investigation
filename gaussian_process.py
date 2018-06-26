@@ -5,6 +5,17 @@ import numpy as np
 import numpy.linalg as la
 import matplotlib.pyplot as plt
 
+import tensorly as tl
+import itertools
+
+import TensorToolbox.multilinalg as mla
+import TensorToolbox as DT
+from TensorToolbox.core import STT
+import SpectralToolbox
+
+# Testing w/ my own TT-wrapper
+from tensor_train import tensor_train
+
 from tests import *
 
 COVARIANCE_FUNCTIONS = ['RBF']
@@ -110,5 +121,34 @@ def test_multivariate():
     print(rmse)
 
 if __name__ == '__main__':
-    test_univariate()
+    # test_univariate()
     # test_multivariate()
+
+    # Test the capabilities of the TT-DMRG-cross algorithm
+    nDims = 4
+    gridRange = 15
+    subDivs = 30
+
+    # TODO: Need to figure out what these parameters do!
+    maxvoleps = 1e-5
+    eps = 1e-8
+
+    print("Building tensor-train approximation...")
+
+    X = getEquispaceGrid(nDims, gridRange, subDivs).gridIndices
+    TW = DT.TensorWrapper(lambda X, params : polytest4(X), X, None)
+    TTapprox = DT.TTvec(TW)
+    TTapprox.build(method='ttdmrgcross', eps=eps, mv_eps=maxvoleps)
+
+
+    # Evaluate the error at a set number of datapoints
+    rmse = 0
+    numTest = 1000
+
+    for i in range(numTest):
+        pt = np.random.randint(subDivs, size=nDims)
+        gridPoint = [X[i][pt[i]] for i in range(len(pt))]
+        rmse += (polytest4(gridPoint) - TTapprox.__getitem__(pt)) ** 2
+        # print("Real: {}, Approx: {}".format(polytest4(gridPoint), TTapprox.__getitem__(pt)))
+
+    print(np.sqrt(rmse / numTest))
