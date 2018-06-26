@@ -22,12 +22,12 @@ class tensor_train:
 
         self.approx = []
         self.dim = len(gridIndices)
-        self.approx.append(np.matrix(np.random.rand(len(gridIndices[0]), 1, rank)))
+        self.approx.append(np.random.rand(1, len(gridIndices[0]), rank))
 
         for i in range(self.dim - 2):
-            self.approx.append(np.array(np.random.rand(len(gridIndices[i + 1]), rank, rank)))
+            self.approx.append(np.array(np.random.rand(rank, len(gridIndices[i + 1]), rank)))
 
-        self.approx.append(np.random.rand(len(gridIndices[-1]), rank, 1))
+        self.approx.append(np.random.rand(rank, len(gridIndices[-1]), 1))
 
         # Scale down the random values
         for mat in self.approx:
@@ -64,7 +64,7 @@ class tensor_train:
         res = np.identity(1)
 
         for i in range(self.dim):
-            res = np.matmul(res, self.approx[i][int(point[i])])
+            res = np.matmul(res, self.approx[i][:, int(point[i]), :])
 
         return res[0, 0]
 
@@ -108,36 +108,7 @@ class tensor_train:
         to a single point in the tensor, whose indices are specified in
         the argument 'point'.
         '''
-        gridpt = [self.gridIndices[i][point[i]] for i in range(self.dim)]
-        fval = self.fcn(gridpt)
-
-        # Precompute matrix products so we don't redo the same calculation over and over
-        for i in reversed(range(self.dim)):
-            np.matmul(self.approx[i][point[i]], self.reversePartials[i + 1], out=self.reversePartials[i])
-
-        for i in range(self.dim):
-            # Compute the gradient
-            if i == 0:
-                np.outer(np.identity(1), self.reversePartials[i + 1], out=self.grads[i])
-                y_approx = np.matmul(np.identity(1), self.reversePartials[i])[0, 0]
-            else:
-                np.outer(self.forward_partial, self.reversePartials[i + 1], out=self.grads[i])
-                y_approx = np.matmul(self.forward_partial, self.reversePartials[i])[0, 0]
-
-            self.grads[i] *= -1.0 * (fval - y_approx)
-            self.grads[i] -= self.lda * self.approx[i][point[i]]
-
-            # Update the forward partial matrix
-
-            if i == 0:
-                np.matmul(np.identity(1), self.approx[i][point[i]], out=self.forward_partial)
-            elif i < self.dim - 1:
-                np.matmul(self.forward_partial, self.approx[i][point[i]], out=self.forward_partial)
-
-        # Perform the parameter update
-        for i in range(self.dim):
-            self.grads[i] *= self.eta
-            self.approx[i][point[i]] -= self.grads[i]
+        pass
 
     def rmsprop_update(self, point):
         '''
@@ -151,7 +122,7 @@ class tensor_train:
 
         # Precompute matrix products so we don't redo the same calculation over and over
         for i in reversed(range(self.dim)):
-            np.matmul(self.approx[i][point[i]], self.reversePartials[i+1], out=self.reversePartials[i])
+            np.matmul(self.approx[i][:, point[i], :], self.reversePartials[i+1], out=self.reversePartials[i])
 
         gt_sq = 0
         # theta_sq = 0
@@ -166,7 +137,7 @@ class tensor_train:
                 y_approx = np.matmul(self.forward_partial, self.reversePartials[i])[0, 0]
 
             self.grads[i] *= -1.0 * (fval - y_approx)
-            self.grads[i] -= self.lda * self.approx[i][point[i]]
+            self.grads[i] -= self.lda * self.approx[i][:, point[i], :]
 
             # Add to the accumulated gradient value
             gt_sq += np.sum(np.square(self.grads[i]))
@@ -174,9 +145,9 @@ class tensor_train:
             # Update the forward partial matrix
 
             if i == 0:
-                np.matmul(np.identity(1), self.approx[i][point[i]], out=self.forward_partial)
+                np.matmul(np.identity(1), self.approx[i][:, point[i], :], out=self.forward_partial)
             elif i < self.dim - 1:
-                np.matmul(self.forward_partial, self.approx[i][point[i]], out=self.forward_partial)
+                np.matmul(self.forward_partial, self.approx[i][:, point[i], :], out=self.forward_partial)
 
         # Perform the RMSProp gradient accumulation update
         self.e_g2 = self.gamma * self.e_g2 + (1 - self.gamma) * gt_sq
@@ -184,7 +155,7 @@ class tensor_train:
         # Perform the parameter update
         for i in range(self.dim):
             self.grads[i] *= self.eta / np.sqrt(self.e_g2 + self.epsilon)
-            self.approx[i][point[i]] -= self.grads[i]
+            self.approx[i][:, point[i], :] -= self.grads[i]
             # theta_sq += np.sum(np.square(self.grads[i])) Residual leftover from Adadelta
 
 
@@ -230,7 +201,7 @@ class tensor_train:
         print("Constructing Approximation with RMSProp...\n")
 
         self.epsilon = 1e-8 # Avoid division-by-zero error terms
-        self.gamma = 0.90   # RMSProp decay term
+        self.gamma = 0.95   # RMSProp decay term
 
         self.e_g2 = 0
         self.e_theta2 = 0
