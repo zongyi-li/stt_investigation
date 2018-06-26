@@ -1,11 +1,11 @@
 # Combines Gaussian Processes with the Tensor Train Decomposition
 #
-#
-#
 
 import numpy as np
 import numpy.linalg as la
 import matplotlib.pyplot as plt
+
+from tests import *
 
 COVARIANCE_FUNCTIONS = ['RBF']
 
@@ -17,7 +17,6 @@ class GaussianProcess:
     def build(self, X, y, sigma_n):
         '''
         NOTE: currently not acccounting for noise!
-
 
         :param X: Multidimensional inputs
         :param y: Targets
@@ -49,24 +48,67 @@ class GaussianProcess:
             kst[i] = self.covariance(pt, self.X[i])
 
         mean = np.dot(kst.transpose(), self.alpha)
+        v = la.solve(self.L, kst)
+        variance = np.abs(self.covariance(pt, pt) - np.dot(v, v))
 
-        return mean
+        return mean, variance
 
 def test_univariate():
     gp = GaussianProcess('RBF')
 
-    X = np.array([i * 1 for i in range(0, 10)])
+    X = np.array([i * 1.0 for i in range(0, 10)])
     y = np.sin(X)
 
     gp.build(X, y, 0)
 
     X_pred = np.array([i * 0.1 for i in range(0, 100)])
-    y_pred = np.array([gp.query(x) for x in X_pred])
+    y_pred = np.array([gp.query(x)[0] for x in X_pred])
+
+
+    variances = np.array([gp.query(x)[1] for x in X_pred])
+    upperBound = y_pred + np.sqrt(variances) * 2
+    lowerBound = y_pred - np.sqrt(variances) * 2
 
     plt.plot(X, y)
     plt.plot(X_pred, y_pred)
 
+    plt.plot(X_pred, upperBound)
+    plt.plot(X_pred, lowerBound)
+
     plt.show()
+
+def test_multivariate():
+    gp = GaussianProcess('RBF')
+
+    nDims = 2
+    gridRange = 10
+    subDivs = 5
+
+    X = getEquispaceGrid(nDims, gridRange, subDivs).getPointArray()
+    y = np.array(X)
+
+    for i in range(len(y)):
+        y[i] = polytest2(X[i])
+
+    print("Building approximation...")
+    gp.build(X, y, 0)
+
+    # Compute an average RMSE by taking 10,000 data points randomly from the simulation box,
+    # computing polynomial, evaluating error
+
+    num_test_points = 1000
+    rmse = 0
+
+    for i in range(num_test_points):
+        x = np.random.rand(nDims) * gridRange
+        y = polytest2(x)
+        print(gp.query(x)[0])
+        rmse += (y - gp.query(x)[0]) ** 2
+
+    rmse = np.sqrt(rmse / num_test_points)
+
+    print(rmse)
 
 if __name__ == '__main__':
     test_univariate()
+    # test_multivariate()
