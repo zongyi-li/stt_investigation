@@ -65,6 +65,9 @@ class Grid:
 def polytest4(params):
     return 2 * params[0] ** 2 + 3 * params[1] * params[2] ** 2 + 5 * params[2] ** 2 * params[3] ** 4
 
+def polytest3(params):
+    return 2 * params[0] ** 2 + 3 * params[1] * params[2] ** 2 + 5 * params[2] ** 2
+
 def polytest2(params):
     return params[0] ** 2 + params[0] * params[1] ** 2 + params[1] ** 3
 
