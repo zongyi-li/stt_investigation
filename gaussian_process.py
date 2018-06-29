@@ -13,9 +13,6 @@ import TensorToolbox as DT
 from TensorToolbox.core import STT
 import SpectralToolbox
 
-# Testing w/ my own TT-wrapper
-from tensor_train import tensor_train
-
 from tests import *
 
 COVARIANCE_FUNCTIONS = ['RBF']
@@ -129,92 +126,49 @@ def test_multivariate():
 
     print(rmse)
 
-def pairwise_covariance_function(X):
-    return np.exp(-0.5 * la.norm(X[0:4] - X[4:8]) ** 2)
 
-def test_covariance_approximation():
+def conjugate_gradient_solve(A, b):
     '''
-    Evaluate the ability of TT-DMRG-cross to approximate the RBF covariance matrix.
+    Implements the conjugate gradient technique to solve the system Ax = b for x.
     :return:
     '''
+    x = np.zeros((len(b), 1))
+    r = np.matmul(A, x) - b
+    p = -r
+    rsold = (r.transpose() * r)[0, 0]
 
-    # Test the capabilities of the TT-DMRG algorithm
-    nDims = 2
-    gridRange = 1
-    subDivs = 15
+    count = 0
+    for i in range(len(b)):
+        count += 1
+        Ap = np.matmul(A, p)
+        alpha = rsold / (p.transpose() * Ap)[0, 0]
 
-    # TODO: Need to figure out what these parameters do!
-    maxvoleps = 1e-3
-    eps = 0.01
+        x = x + alpha * p
+        r = r + alpha * Ap
+        rsnew = (r.transpose() * r)[0, 0]
+        if np.sqrt(rsnew) < 1e-2:
+            break
+        p =  (rsnew / rsold) * p - r
+        rsold = rsnew
+        print(rsnew)
 
-    X = getEquispaceGrid(nDims, gridRange, subDivs).gridIndices
-    TW = DT.TensorWrapper(lambda X, params: pairwise_covariance_function(X), X, None)
-    TTapprox = DT.TTvec(TW)
+    print(count)
 
-    print("Building tensor-train approximation...")
-    TTapprox.build(method='ttdmrg', eps=eps, mv_eps=maxvoleps)
-    print("Approximation complete!")
-
-    # Evaluate the error at set # of randomly-selected test points
-    rmse = 0
-    numTest = 1000
-
-    for i in range(numTest):
-        pt = np.array(np.random.randint(subDivs, size=nDims))
-        gridPoint = np.array([X[i][pt[i]] for i in range(len(pt))])
-        rmse += (pairwise_covariance_function(gridPoint) - TTapprox.__getitem__(pt)) ** 2
-        print("{}, {}".format(pairwise_covariance_function(gridPoint), TTapprox.__getitem__(pt)))
-    print(np.sqrt(rmse / numTest))
-
-def test_alpha_approximation():
-    gp = GaussianProcess('RBF')
-
-    nDims = 4
-    gridRange = 6
-    subDivs = gridRange
-
-    maxvoleps = 1e-5
-    eps = 1e-8
-
-    grid = getEquispaceGrid(nDims, gridRange, subDivs)
-    X = grid.getPointArray()
-    y = np.zeros(len(X))
-
-    for i in range(len(y)):
-        y[i] = polytest3(X[i])
-
-    print("Building Gaussian Process...")
-    gp.build(X, y, 0, grid)                  # 0 indicates the prior is making no assumption of noise
-
-    # Construct a tensor-train approximation to the alpha vector...
-    TW = DT.TensorWrapper(lambda x, params: gp.alpha_function(x), grid.gridIndices, None)
-    TTapprox = DT.TTvec(TW)
-
-    print("Building TT-approximation of alpha vector...")
-    TTapprox.build(method='ttdmrgcross', eps=eps, mv_eps=maxvoleps)
-    print("Approximation complete!")
-
-    rmse = 0
-    numTest = 100
-
-    # See how good the approximation was:
-    for i in range(numTest):
-        pt = np.array(np.random.randint(subDivs, size=nDims))
-        rmse += (gp.alpha_function(pt) - TTapprox.__getitem__(pt)) ** 2
-        print("{}, {}".format(gp.alpha_function(pt), TTapprox.__getitem__(pt)))
-
-    print(np.sqrt(rmse / numTest))
-
-
-def conjugate_gradient_inverter():
-    '''
-    Implements the conjugate gradient technique for inverting a matrix.
-    :return:
-    '''
-    pass
+    return x, rsnew
 
 if __name__ == '__main__':
-    test_alpha_approximation()
+    size = 100
+    A = np.array(np.random.rand(size, size))
+    for i in range(len(A)):
+        for j in range(len(A[0])):
+            if j < i:
+                A[i][j] = A[j][i]
+
+    print(A)
+
+    b = np.matrix(np.random.rand(size)).transpose()
+    x, rsnew = conjugate_gradient_solve(A, b)
+    print(rsnew)
     # test_univariate()
     # test_multivariate()
     # test_covariance_approximation()
