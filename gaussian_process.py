@@ -55,7 +55,7 @@ def conjugate_grad(A, b, x=None):
 class GaussianProcess:
     def __init__(self, covariance_type):
         if covariance_type == 'RBF':
-            self.covariance = lambda x, y: np.exp(-0.5 / 100 * la.norm(x - y) ** 2)
+            self.covariance = lambda x, y: np.exp(-0.5 / 3.0 * la.norm(x - y) ** 2)
             self.approx_method = None
 
     def build_sd(self, X, y, sigma_n):
@@ -84,7 +84,6 @@ class GaussianProcess:
 
     def build_ii(self, X, y, sigma, M, ranges):
         '''
-
         :param X:
         :param y:
         :param sigma_n:
@@ -101,8 +100,6 @@ class GaussianProcess:
         for i in range(M):
             for j in range(len(X[0])):
                 self.Xbar[i, j] = (ranges[j][1] - ranges[j][0]) * self.Xbar[i, j] + ranges[j][0]
-
-        print(self.Xbar)
 
         N = len(X)
 
@@ -123,17 +120,19 @@ class GaussianProcess:
         ldiag = np.zeros(N)
         for i in range(N):
             kn = Knm[i:i+1]
-            ldiag[i] = self.covariance(X[i], X[i]) - np.matmul(np.matmul(kn, Km), kn.transpose())[0, 0] + sigma ** 2
+            ldiag[i] = self.covariance(X[i], X[i]) - np.matmul(np.matmul(kn, la.inv(Km)), kn.transpose())[0, 0] + sigma
             # Invert the value
             ldiag[i] = 1.0 / ldiag[i]
 
         kmnc_inv = np.matmul(Knm.transpose(), np.diag(ldiag))
-        rhs = np.matmul(kmnc_inv, y)
+        # rhs = np.matmul(kmnc_inv, y.transpose())
 
         Qm = Km + np.matmul(kmnc_inv, Knm)
-        self.L = la.cholesky(Qm)
-        ly = la.solve(self.L, rhs)
-        self.alpha = la.solve(self.L.transpose(), ly)
+        Qminv = la.inv(Qm)
+        # self.L = la.cholesky(Qm)
+        # ly = la.solve(self.L, rhs)
+        # self.alpha = la.solve(self.L.transpose(), ly)
+        self.alpha = np.matmul(np.matmul(Qminv, kmnc_inv), y.transpose())
 
     def query(self, pt):
         '''
@@ -143,6 +142,10 @@ class GaussianProcess:
         :return: Mean, variance of the provided test points
         '''
 
+        mean = None
+        variance = None
+
+        # Subset of data approximation
         if self.approx_method == 'SD':
             # Compute the covariance of the test point with all of the other points
             kst = np.zeros(len(self.X))
@@ -153,14 +156,13 @@ class GaussianProcess:
             # v = la.solve(self.L, kst)
             # variance = np.abs(self.covariance(pt, pt) - np.dot(v, v))
 
-            return mean #, variance
-
+        # Induced input approximation
         elif self.approx_method == 'II':
             kst = np.zeros(self.M)
             for i in range(self.M):
                 kst[i] = self.covariance(pt, self.Xbar[i])
 
-            mean = np.dot(kst.transpose(), self.alpha)
+            mean = np.dot(kst.transpose(), self.alpha)[0]
 
         return mean, #, variance
 
@@ -168,20 +170,21 @@ def test_univariate():
     gp = GaussianProcess('RBF')
 
     X = np.array([[i * 0.1] for i in range(0, 150)])
-    y = np.sin(X) + + np.random.normal(0, scale=0.15, size=len(X))
+    y = np.sin(X.transpose()) + np.random.normal(0, scale=0.15, size=len(X))
 
-    # gp.build_ii(X, y, 0.15, 5, [[0, 150]])
 
-    # X_pred = np.array([i * 0.1 for i in range(0, 100)])
-    # y_pred = np.array([gp.query(x) for x in X_pred]) # Add indexing [0] after adding in variance computation
+    gp.build_ii(X, y, 0.001, 8, [[0, 15]])
 
+
+    X_pred = np.array([i * 0.1 for i in range(-50, 200)])
+    y_pred = np.array([gp.query(x) for x in X_pred]) # Add indexing [0] after adding in variance computation
 
     # variances = np.array([gp.query(x)[1] for x in X_pred])
     # upperBound = y_pred + np.sqrt(variances) * 2
     # lowerBound = y_pred - np.sqrt(variances) * 2
 
-    plt.plot(X, y, 'ro')
-    # plt.plot(X_pred, y_pred)
+    plt.scatter(np.ravel(X), np.ravel(y), s=0.4)
+    plt.plot(X_pred, y_pred)
 
     # plt.plot(X_pred, upperBound)
     # plt.plot(X_pred, lowerBound)
