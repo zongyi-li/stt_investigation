@@ -17,19 +17,47 @@ from tests import *
 
 COVARIANCE_FUNCTIONS = ['RBF']
 
+def conjugate_grad(A, b, x=None):
+    """
+    Description
+    -----------
+    Solve a linear equation Ax = b with conjugate gradient method.
+    Parameters
+    ----------
+    A: 2d numpy.array of positive semi-definite (symmetric) matrix
+    b: 1d numpy.array
+    x: 1d numpy.array of initial point
+    Returns
+    -------
+    1d numpy.array x such that Ax = b
+    """
+    n = len(b)
+    if not x:
+        x = np.ones(n)
+    r = np.dot(A, x) - b
+    p = - r
+    r_k_norm = np.dot(r, r)
+    for i in range(2*n):
+        Ap = np.dot(A, p)
+        alpha = r_k_norm / np.dot(p, Ap)
+        x += alpha * p
+        r += alpha * Ap
+        r_kplus1_norm = np.dot(r, r)
+        beta = r_kplus1_norm / r_k_norm
+        r_k_norm = r_kplus1_norm
+        if r_kplus1_norm < 1e-3:
+            print('Itr:', i)
+            break
+        p = beta * p - r
+
+    return x
+
 class GaussianProcess:
     def __init__(self, covariance_type):
         if covariance_type == 'RBF':
-            self.covariance = lambda x, y: np.exp(-0.5 * la.norm(x - y) ** 2)
+            self.covariance = lambda x, y: np.exp(-0.5 / 100 * la.norm(x - y) ** 2)
 
-    def alpha_function(self, X):
-        res = 0
-        for i in range(len(self.grid.gridIndices)):
-            res *= len(self.grid.gridIndices[i])
-            res += X[i]
-        return self.alpha[int(res)]
-
-    def build(self, X, y, sigma_n, grid):
+    def build(self, X, y, sigma_n):
         '''
         NOTE: currently not acccounting for noise!
 
@@ -37,7 +65,6 @@ class GaussianProcess:
         :param y: Targets
         :return:
         '''
-        self.grid = grid
         self.X = X
         self.y = y
         K = np.zeros((len(X), len(X)))
@@ -49,6 +76,7 @@ class GaussianProcess:
         self.L = la.cholesky(K)
         ly = la.solve(self.L, y)
         self.alpha = la.solve(self.L.transpose(), ly)
+        #self.alpha = conjugate_grad(K, np.ravel(y))
 
     def query(self, pt):
         '''
@@ -65,10 +93,10 @@ class GaussianProcess:
             kst[i] = self.covariance(pt, self.X[i])
 
         mean = np.dot(kst.transpose(), self.alpha)
-        v = la.solve(self.L, kst)
-        variance = np.abs(self.covariance(pt, pt) - np.dot(v, v))
+        # v = la.solve(self.L, kst)
+        # variance = np.abs(self.covariance(pt, pt) - np.dot(v, v))
 
-        return mean, variance
+        return mean #, variance
 
 def test_univariate():
     gp = GaussianProcess('RBF')
@@ -127,48 +155,13 @@ def test_multivariate():
     print(rmse)
 
 
-def conjugate_gradient_solve(A, b):
-    '''
-    Implements the conjugate gradient technique to solve the system Ax = b for x.
-    :return:
-    '''
-    x = np.zeros((len(b), 1))
-    r = np.matmul(A, x) - b
-    p = -r
-    rsold = (r.transpose() * r)[0, 0]
-
-    count = 0
-    for i in range(len(b)):
-        count += 1
-        Ap = np.matmul(A, p)
-        alpha = rsold / (p.transpose() * Ap)[0, 0]
-
-        x = x + alpha * p
-        r = r + alpha * Ap
-        rsnew = (r.transpose() * r)[0, 0]
-        if np.sqrt(rsnew) < 1e-2:
-            break
-        p =  (rsnew / rsold) * p - r
-        rsold = rsnew
-        print(rsnew)
-
-    print(count)
-
-    return x, rsnew
-
 if __name__ == '__main__':
-    size = 100
+    size = 500
     A = np.array(np.random.rand(size, size))
-    for i in range(len(A)):
-        for j in range(len(A[0])):
-            if j < i:
-                A[i][j] = A[j][i]
+    A = np.matmul(A.transpose(), A)
 
-    print(A)
-
-    b = np.matrix(np.random.rand(size)).transpose()
-    x, rsnew = conjugate_gradient_solve(A, b)
-    print(rsnew)
+    b = np.ones(size)
+    x = conjugate_grad(A, b)
     # test_univariate()
     # test_multivariate()
     # test_covariance_approximation()
