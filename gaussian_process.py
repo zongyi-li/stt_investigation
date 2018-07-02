@@ -56,15 +56,17 @@ class GaussianProcess:
     def __init__(self, covariance_type):
         if covariance_type == 'RBF':
             self.covariance = lambda x, y: np.exp(-0.5 / 100 * la.norm(x - y) ** 2)
+            self.approx_method = None
 
-    def build(self, X, y, sigma_n):
+    def build_sd(self, X, y, sigma_n):
         '''
-        NOTE: currently not acccounting for noise!
+        Uses a simple random subset-of-data approximation
 
         :param X: Multidimensional inputs
         :param y: Targets
         :return:
         '''
+        self.approx_method = 'SD'
         self.X = X
         self.y = y
         K = np.zeros((len(X), len(X)))
@@ -72,11 +74,66 @@ class GaussianProcess:
         for i in range(len(X)):
             for j in range(len(X)):
                 K[i, j] = self.covariance(X[i], X[j])
+                if i == j:
+                    K[i, j] += sigma_n ** 2
 
-        self.L = la.cholesky(K)
-        ly = la.solve(self.L, y)
+        # self.L = la.cholesky(K)
+        # ly = la.solve(self.L, y)
+        # self.alpha = la.solve(self.L.transpose(), ly)
+        self.alpha = conjugate_grad(K, np.ravel(y))
+
+    def build_ii(self, X, y, sigma, M, ranges):
+        '''
+
+        :param X:
+        :param y:
+        :param sigma_n:
+        :param M: The number of induced inputs
+        :param ranges: Ranges in each coordinate axis to randomly-initialize the pseudo-input locations
+        :return:
+        '''
+        self.approx_method = 'II'
+
+        # Initialize the locations of the pseudo-inputs randomly
+        self.M = M
+        self.Xbar = np.array(np.random.rand(M, len(X[0])))
+
+        for i in range(M):
+            for j in range(len(X[0])):
+                self.Xbar[i, j] = (ranges[j][1] - ranges[j][0]) * self.Xbar[i, j] + ranges[j][0]
+
+        print(self.Xbar)
+
+        N = len(X)
+
+        # Perform gradient ascent to determine pseudo-input locations
+        # TODO: Not implemented yet!
+
+        # Get the mean predictor given the pseudo-input values
+        Km = np.zeros((M, M))
+        Knm = np.zeros((N, M))
+        kn = np.zeros((M, 1))
+        for i in range(M):
+            for j in range(M):
+                Km[i, j] = self.covariance(self.Xbar[i], self.Xbar[j])
+
+            for j in range(N):
+                Knm[j, i] = self.covariance(self.Xbar[i], X[j])
+
+        ldiag = np.zeros(N)
+        for i in range(N):
+            kn = Knm[i:i+1]
+            ldiag[i] = self.covariance(X[i], X[i]) - np.matmul(np.matmul(kn, Km), kn.transpose())[0, 0] + sigma ** 2
+            # Invert the value
+            ldiag[i] = 1.0 / ldiag[i]
+
+        kmnc_inv = np.matmul(Knm.transpose(), np.diag(ldiag))
+        rhs = np.matmul(kmnc_inv, y)
+
+        Qm = Km + np.matmul(kmnc_inv, Knm)
+        self.L = la.cholesky(Qm)
+        ly = la.solve(self.L, rhs)
         self.alpha = la.solve(self.L.transpose(), ly)
-        #self.alpha = conjugate_grad(K, np.ravel(y))
 
     def query(self, pt):
         '''
@@ -86,82 +143,52 @@ class GaussianProcess:
         :return: Mean, variance of the provided test points
         '''
 
-        # Compute the covariance of the test point with all of the other points
+        if self.approx_method == 'SD':
+            # Compute the covariance of the test point with all of the other points
+            kst = np.zeros(len(self.X))
+            for i in range(len(self.X)):
+                kst[i] = self.covariance(pt, self.X[i])
 
-        kst = np.zeros(len(self.X))
-        for i in range(len(self.X)):
-            kst[i] = self.covariance(pt, self.X[i])
+            mean = np.dot(kst.transpose(), self.alpha)
+            # v = la.solve(self.L, kst)
+            # variance = np.abs(self.covariance(pt, pt) - np.dot(v, v))
 
-        mean = np.dot(kst.transpose(), self.alpha)
-        # v = la.solve(self.L, kst)
-        # variance = np.abs(self.covariance(pt, pt) - np.dot(v, v))
+            return mean #, variance
 
-        return mean #, variance
+        elif self.approx_method == 'II':
+            kst = np.zeros(self.M)
+            for i in range(self.M):
+                kst[i] = self.covariance(pt, self.Xbar[i])
+
+            mean = np.dot(kst.transpose(), self.alpha)
+
+        return mean, #, variance
 
 def test_univariate():
     gp = GaussianProcess('RBF')
 
-    X = np.array([i * 1.0 for i in range(0, 10)])
-    y = np.sin(X)
+    X = np.array([[i * 0.1] for i in range(0, 150)])
+    y = np.sin(X) + + np.random.normal(0, scale=0.15, size=len(X))
 
-    gp.build(X, y, 0)
+    # gp.build_ii(X, y, 0.15, 5, [[0, 150]])
 
-    X_pred = np.array([i * 0.1 for i in range(0, 100)])
-    y_pred = np.array([gp.query(x)[0] for x in X_pred])
+    # X_pred = np.array([i * 0.1 for i in range(0, 100)])
+    # y_pred = np.array([gp.query(x) for x in X_pred]) # Add indexing [0] after adding in variance computation
 
 
-    variances = np.array([gp.query(x)[1] for x in X_pred])
-    upperBound = y_pred + np.sqrt(variances) * 2
-    lowerBound = y_pred - np.sqrt(variances) * 2
+    # variances = np.array([gp.query(x)[1] for x in X_pred])
+    # upperBound = y_pred + np.sqrt(variances) * 2
+    # lowerBound = y_pred - np.sqrt(variances) * 2
 
-    # plt.plot(X, y)
-    plt.plot(X_pred, y_pred)
+    plt.plot(X, y, 'ro')
+    # plt.plot(X_pred, y_pred)
 
-    plt.plot(X_pred, upperBound)
-    plt.plot(X_pred, lowerBound)
+    # plt.plot(X_pred, upperBound)
+    # plt.plot(X_pred, lowerBound)
 
     plt.show()
 
-def test_multivariate():
-    gp = GaussianProcess('RBF')
-
-    nDims = 2
-    gridRange = 10
-    subDivs = 5
-
-    X = getEquispaceGrid(nDims, gridRange, subDivs).getPointArray()
-    y = np.array(X)
-
-    for i in range(len(y)):
-        y[i] = polytest2(X[i])
-
-    print("Building approximation...")
-    gp.build(X, y, 0)
-
-    # Compute an average RMSE by taking 1,000 data points randomly from the simulation box,
-    # computing polynomial, evaluating error
-
-    num_test_points = 1000
-    rmse = 0
-
-    for i in range(num_test_points):
-        x = np.random.rand(nDims) * gridRange
-        y = polytest2(x)
-        print(gp.query(x)[0])
-        rmse += (y - gp.query(x)[0]) ** 2
-
-    rmse = np.sqrt(rmse / num_test_points)
-
-    print(rmse)
-
-
 if __name__ == '__main__':
-    size = 500
-    A = np.array(np.random.rand(size, size))
-    A = np.matmul(A.transpose(), A)
-
-    b = np.ones(size)
-    x = conjugate_grad(A, b)
-    # test_univariate()
+    test_univariate()
     # test_multivariate()
     # test_covariance_approximation()
