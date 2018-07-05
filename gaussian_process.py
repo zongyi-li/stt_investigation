@@ -12,10 +12,42 @@ import TensorToolbox.multilinalg as mla
 import TensorToolbox as DT
 from TensorToolbox.core import STT
 import SpectralToolbox
+import progressbar
+
+from multiprocessing import Process, Value, Array
 
 from tests import *
 
 COVARIANCE_FUNCTIONS = ['RBF']
+
+def lloydKMeans(inputs, numClusters, numIter):
+
+    clusters = np.array([inputs[np.random.randint(len(inputs))] for i in range(numClusters)])
+    for i in progressbar.progressbar(range(numIter)):
+
+        newClusters = np.zeros(np.shape(clusters))
+        clusterCounts = np.zeros(len(clusters))
+
+        for j in range(len(inputs)):
+            closestCluster = 0
+            closestDist = np.inf
+            for k in range(len(clusters)):
+                if la.norm(inputs[j] - clusters[k]) < closestDist:
+                    closestCluster = k
+                    closestDist = la.norm(inputs[j] - clusters[k])
+
+            newClusters[closestCluster] += inputs[j]
+            clusterCounts[closestCluster] += 1
+
+        for k in range(len(clusters)):
+            if clusterCounts[k] == 0:
+                newClusters[k] = clusters[k]
+            else:
+                newClusters[k] /= clusterCounts[k]
+
+        clusters = newClusters
+
+    return clusters
 
 def conjugate_grad(A, b, x=None):
     """
@@ -53,9 +85,10 @@ def conjugate_grad(A, b, x=None):
     return x
 
 class GaussianProcess:
-    def __init__(self, covariance_type):
+    def __init__(self, covariance_type, sigma):
         if covariance_type == 'RBF':
-            self.covariance = lambda x, y: np.exp(-0.5 / 3.0 * la.norm(x - y) ** 2)
+            self.covariance = lambda x, y: np.exp(-0.5 / sigma * la.norm(x - y) ** 2)
+            # self.covariance_grad = lambda x, y : pass
             self.approx_method = None
 
     def build_sd(self, X, y, sigma_n):
@@ -82,7 +115,7 @@ class GaussianProcess:
         # self.alpha = la.solve(self.L.transpose(), ly)
         self.alpha = conjugate_grad(K, np.ravel(y))
 
-    def build_ii(self, X, y, sigma, M, ranges):
+    def build_ii(self, X, y, sigma, M, ranges, Xbar=None):
         '''
         :param X:
         :param y:
@@ -93,13 +126,18 @@ class GaussianProcess:
         '''
         self.approx_method = 'II'
 
+        self.sigma = sigma
         # Initialize the locations of the pseudo-inputs randomly
         self.M = M
-        self.Xbar = np.array(np.random.rand(M, len(X[0])))
 
-        for i in range(M):
-            for j in range(len(X[0])):
-                self.Xbar[i, j] = (ranges[j][1] - ranges[j][0]) * self.Xbar[i, j] + ranges[j][0]
+        if Xbar is None:
+            self.Xbar = np.array(np.random.rand(M, len(X[0])))
+            for i in range(M):
+                for j in range(len(X[0])):
+                    self.Xbar[i, j] = (ranges[j][1] - ranges[j][0]) * self.Xbar[i, j] + ranges[j][0]
+        else:
+            self.Xbar = Xbar
+
 
         N = len(X)
 
@@ -110,6 +148,7 @@ class GaussianProcess:
         Km = np.zeros((M, M))
         Knm = np.zeros((N, M))
         kn = np.zeros((M, 1))
+
         for i in range(M):
             for j in range(M):
                 Km[i, j] = self.covariance(self.Xbar[i], self.Xbar[j])
@@ -118,20 +157,21 @@ class GaussianProcess:
                 Knm[j, i] = self.covariance(self.Xbar[i], X[j])
 
         ldiag = np.zeros(N)
+        Kminv = la.inv(Km)
         for i in range(N):
             kn = Knm[i:i+1]
-            ldiag[i] = self.covariance(X[i], X[i]) - np.matmul(np.matmul(kn, la.inv(Km)), kn.transpose())[0, 0] + sigma
+            ldiag[i] = self.covariance(X[i], X[i]) - np.matmul(np.matmul(kn, Kminv), kn.transpose())[0, 0] + sigma ** 2
             # Invert the value
             ldiag[i] = 1.0 / ldiag[i]
 
-        kmnc_inv = np.matmul(Knm.transpose(), np.diag(ldiag))
-        # rhs = np.matmul(kmnc_inv, y.transpose())
+        kmnc_inv = Knm.transpose()
+        # kmnc_inv = np.matmul(Knm.transpose(), np.diag(ldiag))
+
+        for i in range(len(ldiag)):
+            kmnc_inv[:, i] *= ldiag[i]
 
         Qm = Km + np.matmul(kmnc_inv, Knm)
         Qminv = la.inv(Qm)
-        # self.L = la.cholesky(Qm)
-        # ly = la.solve(self.L, rhs)
-        # self.alpha = la.solve(self.L.transpose(), ly)
         self.alpha = np.matmul(np.matmul(Qminv, kmnc_inv), y.transpose())
 
     def query(self, pt):
@@ -139,7 +179,7 @@ class GaussianProcess:
         Queries the mean and variance at a given point from the GP.
 
         :param pt: Test point
-        :return: Mean, variance of the provided test points
+        :return: 2Mean, variance of the provided test points
         '''
 
         mean = None
@@ -162,24 +202,39 @@ class GaussianProcess:
             for i in range(self.M):
                 kst[i] = self.covariance(pt, self.Xbar[i])
 
-            mean = np.dot(kst.transpose(), self.alpha)[0]
+            mean = np.dot(kst.transpose(), self.alpha) # [0]
+            # variance = self.covariance(pt, pt) - np.matmul(np.matmul(kst.transpose(), self.kq_inv), kst.transpose()) + self.sigma ** 2
 
-        return mean, #, variance
+        return mean, variance
+
+def test_kmeans():
+    size = 10
+    X = np.array(np.random.rand(size, 2)) * 5
+    datapoints = []
+    for i in range(size * 10000):
+        center = X[np.random.randint(size)]
+        datapoints.append(center + np.random.normal(center, 0.4))
+
+    datapoints = np.array(datapoints)
+    centers = lloydKMeans(datapoints, 100, 20)
+    plt.scatter(datapoints[:, 0], datapoints[:, 1], s=0.04)
+    plt.scatter(centers[:, 0], centers[:, 1], s=3.0)
+    plt.show()
 
 def test_univariate():
-    gp = GaussianProcess('RBF')
+    gp = GaussianProcess('RBF', 1.0)
 
     X = np.array([[i * 0.1] for i in range(0, 150)])
     y = np.sin(X.transpose()) + np.random.normal(0, scale=0.15, size=len(X))
 
 
-    gp.build_ii(X, y, 0.001, 8, [[0, 15]])
+    gp.build_ii(X, y, 1.2, 20, [[0, 15]])
 
 
-    X_pred = np.array([i * 0.1 for i in range(-50, 200)])
-    y_pred = np.array([gp.query(x) for x in X_pred]) # Add indexing [0] after adding in variance computation
+    X_pred = np.array([i * 0.01 for i in range(-50, 1500)])
+    y_pred = np.array([gp.query(x)[0] for x in X_pred]) # Add indexing [0] after adding in variance computation
 
-    # variances = np.array([gp.query(x)[1] for x in X_pred])
+    variances = np.array([gp.query(x)[1] for x in X_pred])
     # upperBound = y_pred + np.sqrt(variances) * 2
     # lowerBound = y_pred - np.sqrt(variances) * 2
 
@@ -191,7 +246,45 @@ def test_univariate():
 
     plt.show()
 
+def test_multivariate():
+    def fcn(X):
+        return np.sin((X[0] + X[1]) / 300) * 3
+
+    testRange = np.array([[0, 1000], [0, 3000]])
+    numTest = 500
+    noiseScale = 0.5
+    arr = np.zeros((numTest, 3))
+
+    for i in range(numTest):
+        for j in range(2):
+            arr[i, j] = np.random.rand() * (testRange[j, 1] - testRange[j, 0]) + testRange[j, 0]
+
+        arr[i, 2] = fcn(arr[i, 0:2]) + np.random.normal(0, noiseScale)
+
+    plt.figure()
+    plt.scatter(arr[:, 0], arr[:, 1], c=arr[:, 2])
+    plt.colorbar()
+
+    centers = lloydKMeans(arr[:, 0:2], 50, 30)
+
+
+    gp = GaussianProcess('RBF', 28000)
+    gp.build_ii(arr[:, 0:2], arr[:, 2], 0.8, len(centers), None, centers)
+
+    predictions = np.zeros(numTest)
+    for i in range(numTest):
+        predictions[i] = gp.query(arr[i, 0:2])[0]
+
+    plt.figure()
+    plt.plot(centers[:, 0], centers[:, 1], 'ro')
+    plt.scatter(arr[:, 0], arr[:, 1], c=predictions)
+    plt.colorbar()
+
+    plt.show()
+
 if __name__ == '__main__':
-    test_univariate()
+    # test_kmeans()
+    # test_univariate()
+    test_multivariate()
     # test_multivariate()
     # test_covariance_approximation()
