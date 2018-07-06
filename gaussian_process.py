@@ -85,13 +85,64 @@ def conjugate_grad(A, b, x=None):
     return x
 
 class GaussianProcess:
-    def __init__(self, covariance_type, sigma):
+    def __init__(self, covariance_type, sigma_rbf, sigma_n):
+        self.covariance_type = covariance_type
+
         if covariance_type == 'RBF':
-            self.covariance = lambda x, y: np.exp(-0.5 / sigma * la.norm(x - y) ** 2)
-            # self.covariance_grad = lambda x, y : pass
+            self.sigma_rbf = sigma_rbf
+            self.sigma_n = sigma_n
+
+            # Covariance function and its derivative w.r.t several parameters
+            self.covariance = lambda x, y: np.exp(-0.5 / (self.sigma_rbf ** 2) * la.norm(x - y) ** 2)
+            self.hyperparam_derivs = [ # Analytic derivatives of covariance w.r.t. hyperparams, excluding sigma_n
+                lambda x, y: -2 * self.covariance(x, y) * la.norm(x - y) / self.sigma_rbf ** 3 # Derivative w.r.t. sigma_rbf
+            ]
             self.approx_method = None
 
-    def build_sd(self, X, y, sigma_n):
+    def learn_hyperparams_sd(self, X, y, eta):
+        self.X = X
+        self.y = y
+        R = np.zeros((len(X), len(X)))
+        pR = np.zeros(len(X), len(X))
+
+        hyperparams = []
+        if self.covariance_type == 'RBF':
+            hyperparams = [self.sigma_rbf, self.sigma_n] # The noise term must always be the last parameter!!
+
+        partials = np.zeros(len(hyperparams))
+
+        # Perform gradient ascent for a number of iterations
+        for k in range(0):
+            for i in range(len(X)):
+                for j in range(len(X)):
+                    R[i, j] = self.covariance(X[i], X[j])
+                    if i == j:
+                        R[i, j] += self.sigma_n ** 2
+
+            Rinv = la.inv(R)
+
+            for l in range(len(self.hyperparam_derivs)):
+                for i in range(len(X)):
+                    for j in range(len(X)):
+                        pR[i, j] = self.hyperparam_derivs[l](X[i], X[j])
+
+                RinvpR = np.matmul(Rinv, pR)
+                partials[l] = -0.5 * np.matmul(np.matmul(y.transpose(), RinvpR), Rinv)
+                partials[l] -= 0.5 * np.trace(RinvpR)
+
+            # Compute the gradient w.r.t sigma_n, the noise term
+            partials[-1] = -0.5 * np.matmul(np.matmul(np.matmul(y.transpose(), Rinv), Rinv), y) * 2 * self.sigma_n
+            partials[-1] -= 0.5 * np.trace(Rinv) * 2 * self.sigma_n
+
+            # hyperparams -= eta * partials
+
+        # Reassign hyperparameters back to variables
+        #if self.covariance_type == 'RBF':
+        #    self.sigma_rbf = hyperparams[0]
+        #    self.sigma_n = hyperparams[1]
+
+
+    def build_sd(self, X, y):
         '''
         Uses a simple random subset-of-data approximation
 
@@ -102,20 +153,22 @@ class GaussianProcess:
         self.approx_method = 'SD'
         self.X = X
         self.y = y
-        K = np.zeros((len(X), len(X)))
+        R = np.zeros((len(X), len(X)))
 
         for i in range(len(X)):
             for j in range(len(X)):
-                K[i, j] = self.covariance(X[i], X[j])
+                R[i, j] = self.covariance(X[i], X[j])
                 if i == j:
-                    K[i, j] += sigma_n ** 2
+                    R[i, j] += self.sigma_n ** 2
+
+        Rinv = la.inv(R)
 
         # self.L = la.cholesky(K)
         # ly = la.solve(self.L, y)
         # self.alpha = la.solve(self.L.transpose(), ly)
-        self.alpha = conjugate_grad(K, np.ravel(y))
+        self.alpha = conjugate_grad(R, np.ravel(y))
 
-    def build_ii(self, X, y, sigma, M, ranges, Xbar=None):
+    def build_ii(self, X, y, M, ranges, Xbar=None):
         '''
         :param X:
         :param y:
@@ -126,7 +179,7 @@ class GaussianProcess:
         '''
         self.approx_method = 'II'
 
-        self.sigma = sigma
+        self.sigma_n = self.sigma_n
         # Initialize the locations of the pseudo-inputs randomly
         self.M = M
 
@@ -140,9 +193,6 @@ class GaussianProcess:
 
 
         N = len(X)
-
-        # Perform gradient ascent to determine pseudo-input locations
-        # TODO: Not implemented yet!
 
         # Get the mean predictor given the pseudo-input values
         Km = np.zeros((M, M))
@@ -160,7 +210,7 @@ class GaussianProcess:
         Kminv = la.inv(Km)
         for i in range(N):
             kn = Knm[i:i+1]
-            ldiag[i] = self.covariance(X[i], X[i]) - np.matmul(np.matmul(kn, Kminv), kn.transpose())[0, 0] + sigma ** 2
+            ldiag[i] = self.covariance(X[i], X[i]) - np.matmul(np.matmul(kn, Kminv), kn.transpose())[0, 0] + self.sigma_n ** 2
             # Invert the value
             ldiag[i] = 1.0 / ldiag[i]
 
@@ -267,9 +317,8 @@ def test_multivariate():
 
     centers = lloydKMeans(arr[:, 0:2], 50, 30)
 
-
-    gp = GaussianProcess('RBF', 28000)
-    gp.build_ii(arr[:, 0:2], arr[:, 2], 0.8, len(centers), None, centers)
+    gp = GaussianProcess('RBF', 167, 0.8)
+    gp.build_ii(arr[:, 0:2], arr[:, 2], len(centers), None, centers)
 
     predictions = np.zeros(numTest)
     for i in range(numTest):
