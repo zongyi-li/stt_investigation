@@ -54,24 +54,22 @@ def compute_likelihood(hp, covariance, X, y, noise, approx_method, Xbar=None):
 
         ldiag = np.zeros(N)
         Kminv = la.inv(Km)
+
         for i in range(N):
             kn = Knm[i:i + 1]
-            ldiag[i] = covariance(X[i], X[i], hp) - np.matmul(np.matmul(kn, Kminv), kn.transpose())[
-                0, 0] + noise ** 2
+            ldiag[i] = covariance(X[i], X[i], hp) - np.matmul(np.matmul(kn, Kminv), kn.transpose())[0, 0]
             # Invert the value
-            ldiag[i] = 1.0 / ldiag[i]
 
-        kmnc_inv = Knm.transpose()
-        # kmnc_inv = np.matmul(Knm.transpose(), np.diag(ldiag))
+        R = np.matmul(np.matmul(Knm, Kminv), Knm.transpose())
 
-        for i in range(len(ldiag)):
-            kmnc_inv[:, i] *= ldiag[i]
+        for i in range(len(X)):
+            R[i, i] += ldiag[i] + noise ** 2
 
-        R = Km + np.matmul(kmnc_inv, Knm)
         L = la.cholesky(R)
         t = la.solve(L, y)
         rinv_y = la.solve(L.transpose(), t)
         return -(-0.5 * np.log(la.det(R)) - 0.5 * np.matmul(y.transpose(), rinv_y) - len(X) / 2 * np.log(2 * np.pi))
+
 
 def lloydKMeans(inputs, numClusters, numIter):
 
@@ -154,13 +152,13 @@ class GaussianProcess:
             ]
             self.approx_method = None
 
-    def compute_likelihood(self, X, y):
-        return -compute_likelihood(self.hp, self.covariance, X, y, self.sigma_n, self.approx_method)
+    def compute_likelihood(self, X, y, Xbar=None):
+        return -compute_likelihood(self.hp, self.covariance, X, y, self.sigma_n, self.approx_method, Xbar=Xbar)
 
-    def learn_hyperparameters(self, X, y, approx_type):
-        res = minimize(compute_likelihood, self.hp, args=(self.covariance, X, y, self.sigma_n, approx_type), method='CG', jac=False,
+    def learn_hyperparameters(self, X, y, approx_type, centers=None):
+        res = minimize(compute_likelihood, self.hp, args=(self.covariance, X, y, self.sigma_n, approx_type, centers), method='CG', jac=False,
                        options={"maxiter": 30, "disp": True})
-        self.hp[0] = res.x[0]
+        self.hp = res.x
 
     def build_multigp(self):
         pass
@@ -212,7 +210,6 @@ class GaussianProcess:
                     self.Xbar[i, j] = (ranges[j][1] - ranges[j][0]) * self.Xbar[i, j] + ranges[j][0]
         else:
             self.Xbar = Xbar
-
 
         N = len(X)
 
@@ -294,17 +291,20 @@ def test_kmeans():
     plt.show()
 
 def test_univariate():
-    gp = GaussianProcess('RBF', [10], 0.2)
+    gp = GaussianProcess('RBF', [3.0], 0.7)
 
     X = np.array([[i * 0.1] for i in range(0, 150)])
     y = np.sin(X.transpose()) + np.random.normal(0, scale=0.15, size=len(X))
     y = y[0]
 
-    print(gp.compute_likelihood(X, y))
-    gp.learn_hyperparameters(X[:, 0:2], y, 'SD')
-    print(gp.compute_likelihood(X, y))
+    centers = lloydKMeans(X[:, 0:2], 10, 30)
 
-    gp.build_sd(X, y)
+    gp.approx_method='II'
+    print(gp.compute_likelihood(X, y, centers))
+    gp.learn_hyperparameters(X[:, 0:2], y, 'II', centers)
+    print(gp.compute_likelihood(X, y, centers))
+
+    gp.build_ii(X, y, len(centers), None, Xbar=centers)
     X_pred = np.array([i * 0.01 for i in range(-50, 1500)])
     y_pred = np.array([gp.query(x)[0] for x in X_pred]) # Add indexing [0] after adding in variance computation
 
@@ -366,7 +366,7 @@ def test_multivariate():
 
 if __name__ == '__main__':
     # test_kmeans()
-    # test_univariate()
-    test_multivariate()
+    test_univariate()
+    # test_multivariate()
     # test_multivariate()
     # test_covariance_approximation()
