@@ -157,7 +157,7 @@ class GaussianProcess:
 
     def learn_hyperparameters(self, X, y, approx_type, centers=None):
         res = minimize(compute_likelihood, self.hp, args=(self.covariance, X, y, self.sigma_n, approx_type, centers), method='CG', jac=False,
-                       options={"maxiter": 30, "disp": True})
+                       options={"maxiter": 30})
         self.hp = res.x
 
     def build_multigp(self):
