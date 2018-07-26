@@ -30,6 +30,21 @@ class PICGaussian:
             # hp[0]: sigma_rbf (value in covariance)
             self.covariance = lambda x, y: np.exp(-0.5 / (hp[0] ** 2) * la.norm(x - y) ** 2)
 
+    def getClosestBlockIdx(self, x):
+        '''
+        Returns the index of the block that this point belongs to.
+
+        :param x:
+        :return:
+        '''
+        # Assuming there is at least 1 center
+        cc = 0
+        for j in range(len(self.centers)):
+            if (la.norm(self.centers[j] - x) < la.norm(self.centers[cc] - x)):
+                cc = j
+
+        return cc
+
     def getBlocks(self, X, y, numBlocks):
         '''
         Place the input points into groups.
@@ -50,10 +65,7 @@ class PICGaussian:
 
         # Now rearrange the data to correspond with the blocks
         for i in range(len(X)):
-            cc = 0 # Assuming there's at least one closest-cluster
-            for j in range(len(self.centers)):
-                if(la.norm(self.centers[j] - X[i]) < la.norm(self.centers[cc] - X[i])):
-                    cc = j
+            cc = self.getClosestBlockIdx(X[i])
 
             clusterPoints[cc].append(X[i])
             clusterTargets[cc].append(y[i])
@@ -65,7 +77,7 @@ class PICGaussian:
 
         return X, y
 
-    def computePITC(self, X, y, induced):
+    def computePIC(self, X, y, induced):
         '''
         Use Woodbury's matrix inversion lemma to compute the low-rank inverse, implementing PITC
         for use in PIC
@@ -76,6 +88,7 @@ class PICGaussian:
 
         :return: p, defined as in the paper
         '''
+        self.X = X
         self.induced = induced
         self.Knm = np.matrix(np.zeros((len(X), len(induced))))
         self.Km = np.matrix(np.zeros((len(induced), len(induced))))
@@ -109,29 +122,32 @@ class PICGaussian:
                 blocks[i][j, j] += self.sigma_n ** 2
 
             # Invert each of the blocks to get A^{-1}... hooray
-            # blocks[i] = la.inv(blocks[i])
+            blocks[i] = la.inv(blocks[i])
 
         # Now perform the inversion using Woodbury's Lemma to compute the vector p
         Ainv = la.block_diag(*blocks)
 
-        # Check if the inverse was computed correctly...
-        Qn = self.Knm * self.Kminv * self.Knm.transpose()
+        self.pvec = (Ainv - Ainv * self.Knm * la.inv(self.Km + self.Knm.transpose() * Ainv * self.Knm) * self.Knm.transpose() * Ainv) * y
+        self.pvec_augmented = self.Kminv * self.Knm.transpose() * self.pvec
 
-        self.pvec_augmented = self.Kminv * self.Knm.transpose() * la.inv(Qn + Ainv) * y
+        self.wBlocks = []
+        self.wM = np.zeros((len(self.induced), 1))
 
-        # self.pvec = (Ainv - Ainv * self.Knm * la.inv(self.Km + self.Knm.transpose() * Ainv * self.Knm) * self.Knm.transpose() * Ainv) * y
-        # self.pvec_augmented = self.Kminv * self.Knm.transpose() * self.pvec
+        for i in range(len(self.centers)):
+            Kmb = np.matrix(np.zeros(((len(induced), self.clusterLengths[i]))))
 
-        # Compute FITC
-        # diagonal = np.diag([(self.covariance(X[i], X[i]) - (self.Knm[i] * self.Kminv * self.Knm[i].transpose()) + self.sigma_n ** 2)[0, 0]
-        #                    for i in range(len(X))])
+            for j in range(len(induced)):
+                for k in range(self.clusterLengths[i]):
+                    Kmb[j, k] = self.covariance(induced[j], X[self.clusterStarts[i] + k])
 
-        # self.pvec_augmented = self.Kminv * self.Knm.transpose() * la.inv(Qn + diagonal) * y
+            wB = self.Kminv * Kmb * self.pvec[self.clusterStarts[i] : self.clusterStarts[i+1]]
+            self.wBlocks.append(wB)
+            self.wM += wB
 
     def train(self, X, y, induced):
         # For now, just use the cluster points as the induced inputs...
         print("Computing PITC approximation...")
-        self.computePITC(X, y, induced)
+        self.computePIC(X, y, induced)
 
     def predict_pitc(self, X):
         kst = np.zeros((len(X), len(self.Km)))
@@ -142,14 +158,38 @@ class PICGaussian:
 
         return kst * self.pvec_augmented
 
+    def predict_pic(self, X):
+        predictions = np.zeros(len(X))
+        variances = np.zeros(len(X))
+
+        kstM = np.matrix(np.zeros((1, len(self.induced))))
+
+        for i in range(len(X)):
+            # Compute covariances with the inducing inputs
+            for j in range(len(self.Km)):
+                kstM[0, j] = self.covariance(X[i], self.induced[j])
+
+            # Find the closest block
+            cc = self.getClosestBlockIdx(X[i])
+            kstB = np.matrix(np.zeros((1, self.clusterLengths[cc])))
+
+            # Compute covariances with the points in the block
+            for j in range(self.clusterLengths[cc]):
+                kstB[0, j] = self.covariance(X[i], self.X[self.clusterStarts[cc] + j])
+
+            # predictions[i] = self.wM - self.wBlocks[cc]
+            predictions[i] = kstM * (self.wM - self.wBlocks[cc]) + kstB * self.pvec[self.clusterStarts[cc] : self.clusterStarts[cc+1]]
+
+        return predictions
+
 
 def test_univariate():
-    gp = PICGaussian('RBF', [2.0], 0.5)
+    gp = PICGaussian('RBF', [2.0], 0.2)
 
     X = np.array([[i * 0.1] for i in range(0, 150)])
     y = np.array(np.sin(X.transpose()) + np.random.normal(0, scale=0.15, size=len(X)).transpose())[0]
 
-    blockedX, blockedY = gp.getBlocks(X, y, 5)
+    blockedX, blockedY = gp.getBlocks(X, y, 20)
     blockedY = np.matrix(blockedY).transpose()
 
     induced_inputs = blockedX[np.random.choice(np.array(range(len(blockedX))), replace=False, size=15)]
@@ -162,7 +202,7 @@ def test_univariate():
     gp.train(blockedX, blockedY, induced_inputs)
 
     X_pred = np.array([i * 0.01 for i in range(-50, 1500)])
-    predictions = gp.predict_pitc(X_pred)
+    predictions = gp.predict_pic(X_pred)
 
     plt.scatter(X_pred, predictions, s=0.02)
     plt.scatter(X, y, c=colors)
