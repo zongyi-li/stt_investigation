@@ -30,6 +30,15 @@ class PICGaussian:
             # hp[0]: sigma_rbf (value in covariance)
             self.covariance = lambda x, y: np.exp(-0.5 / (hp[0] ** 2) * la.norm(x - y) ** 2)
 
+    def getFPC_clusters(self, X):
+        '''
+        Performs furthest-point clustering.
+
+        :param X:
+        :return:
+        '''
+        pass
+
     def getClosestBlockIdx(self, x):
         '''
         Returns the index of the block that this point belongs to.
@@ -90,6 +99,7 @@ class PICGaussian:
         '''
         self.X = X
         self.induced = induced
+
         self.Knm = np.matrix(np.zeros((len(X), len(induced))))
         self.Km = np.matrix(np.zeros((len(induced), len(induced))))
 
@@ -127,13 +137,17 @@ class PICGaussian:
         # Now perform the inversion using Woodbury's Lemma to compute the vector p
         Ainv = la.block_diag(*blocks)
 
-        self.pvec = (Ainv - Ainv * self.Knm * la.inv(self.Km + self.Knm.transpose() * Ainv * self.Knm) * self.Knm.transpose() * Ainv) * y
+        self.pitc_inv = (Ainv - Ainv * self.Knm * la.inv(self.Km + self.Knm.transpose() * Ainv * self.Knm) * self.Knm.transpose() * Ainv)
+        self.pvec = self.pitc_inv * y
         self.pvec_augmented = self.Kminv * self.Knm.transpose() * self.pvec
 
         self.wBlocks = []
-        self.wM = np.zeros((len(self.induced), 1))
+        self.vBlocks = []
+
+        self.wM = np.matrix(np.zeros((len(self.induced), 1)))
 
         for i in range(len(self.centers)):
+            # Precomputation for mean prediction
             Kmb = np.matrix(np.zeros(((len(induced), self.clusterLengths[i]))))
 
             for j in range(len(induced)):
@@ -144,9 +158,37 @@ class PICGaussian:
             self.wBlocks.append(wB)
             self.wM += wB
 
+        # Variance precomputations
+
+        self.sum = np.matrix(np.zeros((len(self.induced), len(self.induced))))
+        self.aBlocks = [np.matrix(np.zeros((len(self.induced), len(self.induced)))) for i in range(len(self.centers))]
+        self.bBlocks = [np.matrix(np.zeros((self.clusterLengths[i], len(self.induced)))) for i in range(len(self.centers))]
+
+        for i in range(len(self.centers)):
+            for j in range(len(self.centers)):
+                component = self.Knm.transpose()[:, self.clusterStarts[i] : self.clusterStarts[i + 1]] \
+                    * self.pitc_inv[self.clusterStarts[i] : self.clusterStarts[i + 1], self.clusterStarts[j] : self.clusterStarts[j + 1]] \
+                    * self.Knm[self.clusterStarts[j] : self.clusterStarts[j + 1]]
+
+                self.aBlocks[i] += component / 2.0
+                self.aBlocks[j] += component / 2.0
+                self.sum += component
+
+                if i != j:
+                    self.bBlocks[i] += \
+                        2 * self.pitc_inv[self.clusterStarts[i] : self.clusterStarts[i + 1], self.clusterStarts[j] : self.clusterStarts[j + 1]] \
+                        * self.Knm[self.clusterStarts[j] : self.clusterStarts[j + 1]]
+
+        # Conjugate w/ Km^(-1)
+        for i in range(len(self.centers)):
+            self.aBlocks[i] = self.Kminv * self.aBlocks[i] * self.Kminv
+            self.bBlocks[i] = self.bBlocks[i] * self.Kminv
+
+        self.sum = self.Kminv * self.sum * self.Kminv
+
     def train(self, X, y, induced):
         # For now, just use the cluster points as the induced inputs...
-        print("Computing PITC approximation...")
+        print("Computing PIC approximation...")
         self.computePIC(X, y, induced)
 
     def predict_pitc(self, X):
@@ -161,10 +203,15 @@ class PICGaussian:
     def predict_pic(self, X):
         predictions = np.zeros(len(X))
         variances = np.zeros(len(X))
+        variances_gt = np.zeros(len(X))
 
         kstM = np.matrix(np.zeros((1, len(self.induced))))
 
-        for i in range(len(X)):
+        Qn = self.Kminv * self.Knm.transpose()
+
+        for i in progressbar.progressbar(range(len(X))):
+            # Do a brute force computation
+
             # Compute covariances with the inducing inputs
             for j in range(len(self.Km)):
                 kstM[0, j] = self.covariance(X[i], self.induced[j])
@@ -177,22 +224,58 @@ class PICGaussian:
             for j in range(self.clusterLengths[cc]):
                 kstB[0, j] = self.covariance(X[i], self.X[self.clusterStarts[cc] + j])
 
-            # predictions[i] = self.wM - self.wBlocks[cc]
             predictions[i] = kstM * (self.wM - self.wBlocks[cc]) + kstB * self.pvec[self.clusterStarts[cc] : self.clusterStarts[cc+1]]
 
-        return predictions
+            # print(self.sum - self.aBlocks[cc])
 
+            variances[i] = self.covariance(X[i], X[i]) + self.sigma_n ** 2 \
+                - kstM * (self.sum - self.aBlocks[cc]) * kstM.transpose() \
+                - kstB * self.bBlocks[cc] * kstM.transpose() \
+                - kstB * self.pitc_inv[self.clusterStarts[cc] : self.clusterStarts[cc + 1], self.clusterStarts[cc] : self.clusterStarts[cc + 1]] * kstB.transpose()
+
+            # Do a brute force block replacement
+            block = kstM * Qn
+
+            block[:, self.clusterStarts[cc]: self.clusterStarts[cc + 1]] = kstB
+            variances_gt[i] = self.covariance(X[i], X[i]) + self.sigma_n ** 2 - block * self.pitc_inv * block.transpose()
+
+            if cc == 0:
+                # Perform a simple test
+                test1 = kstM * ((self.Kminv * self.Knm.transpose()[:, self.clusterStarts[1]:] \
+                                            * self.pitc_inv[self.clusterStarts[1]:, self.clusterStarts[1]:] \
+                                            * self.Knm[self.clusterStarts[1]:, :] * self.Kminv)) * kstM.transpose()
+
+                # test1 = kstM * (self.sum - self.aBlocks[0]) * kstM.transpose()
+
+                # Off-diagonal elements
+                #test2 = 2 * kstB * self.pitc_inv[self.clusterStarts[0]: self.clusterStarts[1], self.clusterStarts[1]:] \
+                #        * self.Knm[self.clusterStarts[1]:] * self.Kminv * kstM.transpose()
+
+                test2 = kstB * self.bBlocks[0] * kstM.transpose()
+
+                test3 = kstB * self.pitc_inv[self.clusterStarts[0]: self.clusterStarts[1],
+                               self.clusterStarts[0]: self.clusterStarts[1]] * kstB.transpose()
+
+                print(self.covariance(X[i], X[i]) + self.sigma_n ** 2 - test1 - test2 - test3 - variances_gt[i])
+
+
+        print(la.norm(variances_gt - variances))
+
+            # test = self.Kminv * self.Knm.transpose() * self.pitc_inv * self.Knm * self.Kminv
+            # print(la.norm(test - self.sum))
+
+        return predictions, variances
 
 def test_univariate():
-    gp = PICGaussian('RBF', [2.0], 0.2)
+    gp = PICGaussian('RBF', [1.0], 0.2)
 
-    X = np.array([[i * 0.1] for i in range(0, 150)])
+    X = np.concatenate((np.array([[i * 0.1] for i in range(0, 50)]), np.array([[i * 0.1] for i in range(90, 100)])))
     y = np.array(np.sin(X.transpose()) + np.random.normal(0, scale=0.15, size=len(X)).transpose())[0]
 
-    blockedX, blockedY = gp.getBlocks(X, y, 20)
+    blockedX, blockedY = gp.getBlocks(X, y, 2)
     blockedY = np.matrix(blockedY).transpose()
 
-    induced_inputs = blockedX[np.random.choice(np.array(range(len(blockedX))), replace=False, size=15)]
+    induced_inputs = blockedX[np.random.choice(np.array(range(len(blockedX))), replace=False, size=8)]
 
     colors = []
     for i in range(len(gp.clusterStarts)-1):
@@ -202,9 +285,10 @@ def test_univariate():
     gp.train(blockedX, blockedY, induced_inputs)
 
     X_pred = np.array([i * 0.01 for i in range(-50, 1500)])
-    predictions = gp.predict_pic(X_pred)
+    predictions, variances = gp.predict_pic(X_pred)
 
-    plt.scatter(X_pred, predictions, s=0.02)
+    plt.plot(X_pred, predictions, 'k-')
+    plt.fill_between(X_pred, predictions - 2 * np.sqrt(variances), predictions + 2 * np.sqrt(variances))
     plt.scatter(X, y, c=colors)
     plt.show()
 
