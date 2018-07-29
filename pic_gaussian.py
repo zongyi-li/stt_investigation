@@ -30,14 +30,31 @@ class PICGaussian:
             # hp[0]: sigma_rbf (value in covariance)
             self.covariance = lambda x, y: np.exp(-0.5 / (hp[0] ** 2) * la.norm(x - y) ** 2)
 
-    def getFPC_clusters(self, X):
+    def getFPC_clusters(self, X, numClusters):
         '''
-        Performs furthest-point clustering.
+        Performs furthest-point clustering. Greedy algorithm is within a factor of 2 of the optimal.
 
-        :param X:
-        :return:
+        :param X: The set of points to cluster
+        :param numClusters: The number of clusters
+        :return: The set of cluster centers
         '''
-        pass
+        clusters = [X[np.random.randint(len(X))]] # Random seed point
+        clusterDists = np.array([np.inf for _ in range(len(X))])
+
+        for i in range(numClusters):
+            maxIdx = 0
+            for j in range(len(X)):
+                latestDist = la.norm(clusters[-1] - X[j])
+
+                if latestDist < clusterDists[j]:
+                    clusterDists[j] = latestDist
+
+                if clusterDists[j] > clusterDists[maxIdx]:
+                    maxIdx = j
+
+            clusters.append(X[maxIdx])
+
+        return clusters
 
     def getClosestBlockIdx(self, x):
         '''
@@ -63,7 +80,7 @@ class PICGaussian:
         '''
 
         # Currently, select the blocks randomly. Will implement FPC in the future
-        self.centers = X[np.random.choice(np.array(range(len(X))), replace=False, size=numBlocks)]
+        self.centers = self.getFPC_clusters(X, numBlocks)# X[np.random.choice(np.array(range(len(X))), replace=False, size=numBlocks)]
         self.clusterLengths = np.zeros(len(self.centers), dtype=int)
 
         clusterPoints = []
@@ -242,7 +259,7 @@ class PICGaussian:
         return predictions, variances
 
 def test_univariate():
-    gp = PICGaussian('RBF', [1.0], 0.1)
+    gp = PICGaussian('RBF', [1.0], 0.13)
 
     X = np.concatenate((np.array([[i * 0.1] for i in range(0, 50)]), np.array([[i * 0.1] for i in range(90, 100)])))
     y = np.array(np.sin(X.transpose()) + np.random.normal(0, scale=0.15, size=len(X)).transpose())[0]
@@ -250,7 +267,7 @@ def test_univariate():
     blockedX, blockedY = gp.getBlocks(X, y, 7)
     blockedY = np.matrix(blockedY).transpose()
 
-    induced_inputs = blockedX[np.random.choice(np.array(range(len(blockedX))), replace=False, size=8)]
+    induced_inputs = gp.getFPC_clusters(X, 8)
 
     colors = []
     for i in range(len(gp.clusterStarts)-1):
