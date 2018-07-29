@@ -170,11 +170,11 @@ class PICGaussian:
                     * self.pitc_inv[self.clusterStarts[i] : self.clusterStarts[i + 1], self.clusterStarts[j] : self.clusterStarts[j + 1]] \
                     * self.Knm[self.clusterStarts[j] : self.clusterStarts[j + 1]]
 
-                self.aBlocks[i] += component / 2.0
-                self.aBlocks[j] += component / 2.0
+                self.aBlocks[i] += component
                 self.sum += component
 
                 if i != j:
+                    self.aBlocks[j] += component
                     self.bBlocks[i] += \
                         2 * self.pitc_inv[self.clusterStarts[i] : self.clusterStarts[i + 1], self.clusterStarts[j] : self.clusterStarts[j + 1]] \
                         * self.Knm[self.clusterStarts[j] : self.clusterStarts[j + 1]]
@@ -239,40 +239,15 @@ class PICGaussian:
             block[:, self.clusterStarts[cc]: self.clusterStarts[cc + 1]] = kstB
             variances_gt[i] = self.covariance(X[i], X[i]) + self.sigma_n ** 2 - block * self.pitc_inv * block.transpose()
 
-            if cc == 0:
-                # Perform a simple test
-                test1 = kstM * ((self.Kminv * self.Knm.transpose()[:, self.clusterStarts[1]:] \
-                                            * self.pitc_inv[self.clusterStarts[1]:, self.clusterStarts[1]:] \
-                                            * self.Knm[self.clusterStarts[1]:, :] * self.Kminv)) * kstM.transpose()
-
-                # test1 = kstM * (self.sum - self.aBlocks[0]) * kstM.transpose()
-
-                # Off-diagonal elements
-                #test2 = 2 * kstB * self.pitc_inv[self.clusterStarts[0]: self.clusterStarts[1], self.clusterStarts[1]:] \
-                #        * self.Knm[self.clusterStarts[1]:] * self.Kminv * kstM.transpose()
-
-                test2 = kstB * self.bBlocks[0] * kstM.transpose()
-
-                test3 = kstB * self.pitc_inv[self.clusterStarts[0]: self.clusterStarts[1],
-                               self.clusterStarts[0]: self.clusterStarts[1]] * kstB.transpose()
-
-                print(self.covariance(X[i], X[i]) + self.sigma_n ** 2 - test1 - test2 - test3 - variances_gt[i])
-
-
-        print(la.norm(variances_gt - variances))
-
-            # test = self.Kminv * self.Knm.transpose() * self.pitc_inv * self.Knm * self.Kminv
-            # print(la.norm(test - self.sum))
-
         return predictions, variances
 
 def test_univariate():
-    gp = PICGaussian('RBF', [1.0], 0.2)
+    gp = PICGaussian('RBF', [1.0], 0.1)
 
     X = np.concatenate((np.array([[i * 0.1] for i in range(0, 50)]), np.array([[i * 0.1] for i in range(90, 100)])))
     y = np.array(np.sin(X.transpose()) + np.random.normal(0, scale=0.15, size=len(X)).transpose())[0]
 
-    blockedX, blockedY = gp.getBlocks(X, y, 2)
+    blockedX, blockedY = gp.getBlocks(X, y, 7)
     blockedY = np.matrix(blockedY).transpose()
 
     induced_inputs = blockedX[np.random.choice(np.array(range(len(blockedX))), replace=False, size=8)]
