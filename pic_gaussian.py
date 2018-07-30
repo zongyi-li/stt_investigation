@@ -244,14 +244,13 @@ class PICGaussian:
         ])
         self.pvec += blockDiagMult(blocks, y)
 
-        print("Low-rank inverse computation complete!")
-
         self.wBlocks = []
         self.vBlocks = []
 
         self.wM = np.matrix(np.zeros((len(self.induced), 1)))
 
-        for i in range(len(self.centers)):
+        print("Performing mean prediction precomputation!")
+        for i in progressbar(range(len(self.centers))):
             # Precomputation for mean prediction
             Kmb = np.matrix(np.zeros(((len(induced), self.clusterLengths[i]))))
 
@@ -264,6 +263,7 @@ class PICGaussian:
             self.wM += wB
 
         # Variance precomputations
+        print("Performing variance prediction precomputation!")
         self.sum = np.matrix(np.zeros((len(self.induced), len(self.induced))))
 
         # Not-B, Not-B terms
@@ -272,30 +272,23 @@ class PICGaussian:
         # Off-diagonal B, Not-B terms
         self.bBlocks = [np.matrix(np.zeros((self.clusterLengths[i], len(self.induced)))) for i in range(len(self.centers))]
 
-        # B, B terms handled at prediction time
+        # B, B terms
+        self.cBlocks = [np.matrix(np.zeros((self.clusterLengths[i], self.clusterLengths[i]))) for i in
+                        range(len(self.centers))]
 
-        # TODO: Need to get rid of pitc_inv!!
-
-        # Testing purpose only
-        self.pitc_inv = sla.block_diag(*blocks) - la.multi_dot([
-            blockDiagMult(blocks, self.Knm),
-            blockDiagMult(blocks, la.inv(
-                self.Km + self.Knm.transpose() * blockDiagMult(blocks, self.Knm)) * self.Knm.transpose(), left=False)
-        ])
-
-        for i in range(len(self.centers)):
+        for i in progressbar(range(len(self.centers))):
             for j in range(len(self.centers)):
                 pComponent = -la.multi_dot([
                     blocks[i],
                     self.Knm[self.clusterStarts[i]: self.clusterStarts[i + 1]],
                     invCenter,
                     self.Knm.transpose()[:, self.clusterStarts[j]: self.clusterStarts[j + 1]],
-                    blocks[j],
-                    self.Knm[self.clusterStarts[j]: self.clusterStarts[j + 1]]
+                    blocks[j]
                 ])
 
+                bBlock_delta = pComponent * self.Knm[self.clusterStarts[j] : self.clusterStarts[j+1]]
                 aBlock_delta = self.Knm.transpose()[:,
-                                   self.clusterStarts[i]: self.clusterStarts[i + 1]] * pComponent
+                                   self.clusterStarts[i]: self.clusterStarts[i + 1]] * bBlock_delta
 
                 if i == j:
                     aBlock_delta += la.multi_dot([
@@ -304,13 +297,15 @@ class PICGaussian:
                         self.Knm[self.clusterStarts[j]: self.clusterStarts[j + 1]]
                     ])
 
+                    self.cBlocks[i] = blocks[i] + pComponent
+
                 self.aBlocks[i] += aBlock_delta
                 self.sum += aBlock_delta
 
                 if i != j:
                     self.aBlocks[j] += aBlock_delta
                     self.bBlocks[i] += \
-                        2 * pComponent
+                        2 * bBlock_delta
 
         # Conjugate w/ Km^(-1)
         for i in range(len(self.centers)):
@@ -369,7 +364,7 @@ class PICGaussian:
                 variances[i] = self.covariance(X[i], X[i]) + self.sigma_n ** 2 \
                     - kstM * (self.sum - self.aBlocks[cc]) * kstM.transpose() \
                     - kstB * self.bBlocks[cc] * kstM.transpose() \
-                    - kstB * self.pitc_inv[self.clusterStarts[cc] : self.clusterStarts[cc + 1], self.clusterStarts[cc] : self.clusterStarts[cc + 1]] * kstB.transpose()
+                    - kstB * self.cBlocks[cc] * kstB.transpose()
 
         if computeVariance:
             return predictions, variances
