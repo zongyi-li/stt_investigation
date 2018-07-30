@@ -68,7 +68,7 @@ class PICGaussian:
             self.covariance = lambda x, y: np.exp(-0.5 / (hp[0] * hp[0]) * sq_dist(x, y))
 
     def cluster(self, X, numClusters):
-        return self.randomCluster(X, numClusters)
+        return self.FPC_cluster(X, numClusters)
 
     def randomCluster(self, X, numClusters):
         return X[np.random.choice(np.array(range(len(X))), replace=False, size=numClusters)]
@@ -235,23 +235,15 @@ class PICGaussian:
 
         # Now perform the PITC matrix inversion using Woodbury's Lemma
         print("Computing low-rank inverse with Woodbury's Lemma")
+
+        invCenter = la.inv(self.Km + self.Knm.transpose() * blockDiagMult(blocks, self.Knm))
         self.pvec = -la.multi_dot([
             blockDiagMult(blocks, self.Knm),
-            blockDiagMult(blocks, la.inv(
-                self.Km + self.Knm.transpose() * blockDiagMult(blocks, self.Knm)) * self.Knm.transpose(), left=False),
+            blockDiagMult(blocks, invCenter * self.Knm.transpose(), left=False),
             y
         ])
         self.pvec += blockDiagMult(blocks, y)
 
-        # Testing purpose only
-        self.pitc_inv = sla.block_diag(blocks) - la.multi_dot([
-            blockDiagMult(blocks, self.Knm),
-            blockDiagMult(blocks, la.inv(
-                self.Km + self.Knm.transpose() * blockDiagMult(blocks, self.Knm)) * self.Knm.transpose(), left=False)
-        ])
-
-        #self.pvec_without_y = la.block_diag(*blocks) \
-        #                      - blockDiagMult(blocks, self.Knm) * blockDiagMult(blocks, la.inv(self.Km + self.Knm.transpose() * blockDiagMult(blocks, self.Knm)) * self.Knm.transpose(), left=False)
         print("Low-rank inverse computation complete!")
 
         self.wBlocks = []
@@ -282,20 +274,43 @@ class PICGaussian:
 
         # B, B terms handled at prediction time
 
+        # TODO: Need to get rid of pitc_inv!!
+
+        # Testing purpose only
+        self.pitc_inv = sla.block_diag(*blocks) - la.multi_dot([
+            blockDiagMult(blocks, self.Knm),
+            blockDiagMult(blocks, la.inv(
+                self.Km + self.Knm.transpose() * blockDiagMult(blocks, self.Knm)) * self.Knm.transpose(), left=False)
+        ])
+
         for i in range(len(self.centers)):
             for j in range(len(self.centers)):
-                component = self.Knm.transpose()[:, self.clusterStarts[i] : self.clusterStarts[i + 1]] \
-                    * self.pitc_inv[self.clusterStarts[i] : self.clusterStarts[i + 1], self.clusterStarts[j] : self.clusterStarts[j + 1]] \
-                    * self.Knm[self.clusterStarts[j] : self.clusterStarts[j + 1]]
+                pComponent = -la.multi_dot([
+                    blocks[i],
+                    self.Knm[self.clusterStarts[i]: self.clusterStarts[i + 1]],
+                    invCenter,
+                    self.Knm.transpose()[:, self.clusterStarts[j]: self.clusterStarts[j + 1]],
+                    blocks[j],
+                    self.Knm[self.clusterStarts[j]: self.clusterStarts[j + 1]]
+                ])
 
-                self.aBlocks[i] += component
-                self.sum += component
+                aBlock_delta = self.Knm.transpose()[:,
+                                   self.clusterStarts[i]: self.clusterStarts[i + 1]] * pComponent
+
+                if i == j:
+                    aBlock_delta += la.multi_dot([
+                        self.Knm.transpose()[:, self.clusterStarts[i]: self.clusterStarts[i + 1]],
+                        blocks[i],
+                        self.Knm[self.clusterStarts[j]: self.clusterStarts[j + 1]]
+                    ])
+
+                self.aBlocks[i] += aBlock_delta
+                self.sum += aBlock_delta
 
                 if i != j:
-                    self.aBlocks[j] += component
+                    self.aBlocks[j] += aBlock_delta
                     self.bBlocks[i] += \
-                        2 * self.pitc_inv[self.clusterStarts[i] : self.clusterStarts[i + 1], self.clusterStarts[j] : self.clusterStarts[j + 1]] \
-                        * self.Knm[self.clusterStarts[j] : self.clusterStarts[j + 1]]
+                        2 * pComponent
 
         # Conjugate w/ Km^(-1)
         for i in range(len(self.centers)):
