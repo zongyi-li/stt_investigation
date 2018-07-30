@@ -1,8 +1,46 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.linalg as la
+import numpy.linalg as la
+import scipy.linalg as sla
 from progressbar import progressbar
 from scipy.spatial import KDTree
+from joblib import Parallel, delayed
+from updatable_pq import UpdatablePQ
+
+def sq_dist(a, b):
+    a_min_b = a - b
+    return np.einsum('i,i->', a_min_b, a_min_b)
+
+def blockDiagMult(blocks, other, left=True):
+    '''
+    Multiplies the block diagonal matrix specified in the given array by the
+
+    :param blocks: List of square blocks
+    :param rhs:
+    :param left: Which side to multiply on. Left -> blocks * other. right -> other * blocks
+    :return:
+    '''
+    idx = 0
+    N = np.sum([np.shape(blocks[i])[0] for i in range(len(blocks))])
+    res = None
+
+    if left:
+        M = np.shape(other)[1]
+        res = np.zeros((N, M))
+
+        for i in range(len(blocks)):
+            res[idx : idx + len(blocks[i])] = blocks[i] * other[idx : idx + len(blocks[i])]
+            idx += len(blocks[i])
+    else:
+        M = np.shape(other)[0]
+        res = np.zeros((M, N))
+
+        for i in range(len(blocks)):
+            res[:, idx : idx + len(blocks[i])] = other[:, idx : idx + len(blocks[i])] * blocks[i]
+            idx += len(blocks[i])
+
+    return np.matrix(res)
+
 
 class PICGaussian:
     def __init__(self, covariance_type, hp, y_noise):
@@ -27,9 +65,15 @@ class PICGaussian:
         if covariance_type == 'RBF':
             # Hyperparameters:
             # hp[0]: sigma_rbf (value in covariance)
-            self.covariance = lambda x, y: np.exp(-0.5 / (hp[0] * hp[0]) * la.norm(x - y) ** 2)
+            self.covariance = lambda x, y: np.exp(-0.5 / (hp[0] * hp[0]) * sq_dist(x, y))
 
-    def getFPC_clusters(self, X, numClusters):
+    def cluster(self, X, numClusters):
+        return self.randomCluster(X, numClusters)
+
+    def randomCluster(self, X, numClusters):
+        return X[np.random.choice(np.array(range(len(X))), replace=False, size=numClusters)]
+
+    def FPC_cluster(self, X, numClusters):
         '''
         Performs furthest-point clustering. Greedy algorithm is within a factor of 2 of the optimal.
 
@@ -64,6 +108,33 @@ class PICGaussian:
         print("Clustering complete!")
         return clusters
 
+    def sp_cluster(self, X, numClusters):
+        pass
+
+    def optimizedFPC(self, X, numClusters):
+        '''
+        Performs optimized furthest-point clustering using a priority queue and a K-D tree for fast lookups.
+        :param X: The points to cluster
+        :param numClusters: Number of clusters
+        :return: The clustered points
+        '''
+        print("Performing clustering...")
+        tree = KDTree(X, 10)
+        pq = UpdatablePQ()
+
+        clusters = [X[np.random.randint(len(X))]]  # Random seed point
+
+        maxsqDist = max(sq_dist(clusters[0], x) for x in X)
+
+        for i in range(numClusters):
+            neighbor_idx = tree.query_ball_point(clusters[-1], np.sqrt(maxsqDist))
+            for neighbor in neighbor_idx:
+                newDist = sq_dist(neighbor, clusters[-1])
+                if newDist < -pq.entry_finder(neighbor)[0]:
+                    pq.add_task()
+
+        print("Clustering complete!")
+
     def getClosestBlockIdx(self, x):
         '''
         Returns the index of the block that this point belongs to.
@@ -82,8 +153,7 @@ class PICGaussian:
         :param X: The input points
         :return: Blocked off points
         '''
-
-        self.centers = X[np.random.choice(np.array(range(len(X))), replace=False, size=numBlocks)] # self.getFPC_clusters(X, numBlocks)
+        self.centers = self.cluster(X, numBlocks)
         self.clusterLengths = np.zeros(len(self.centers), dtype=int)
 
         # Place the clusters in a K-D tree for easy access
@@ -153,8 +223,8 @@ class PICGaussian:
                     blocks[i][j - self.clusterStarts[i], k - self.clusterStarts[i]] = self.covariance(X[j], X[k])
 
             # Subtract off the block Qn
-            partial = self.Knm[self.clusterStarts[i]: self.clusterStarts[i + 1]]
-            blocks[i] -= np.matmul(np.matmul(partial, self.Kminv), partial.transpose())
+            partial = np.matrix(self.Knm[self.clusterStarts[i]: self.clusterStarts[i + 1]])
+            blocks[i] -= partial * self.Kminv * partial.transpose()
 
             # Add regularization terms
             for j in range(self.clusterLengths[i]):
@@ -163,15 +233,26 @@ class PICGaussian:
             # Invert each of the blocks to get A^{-1}... hooray
             blocks[i] = la.inv(blocks[i])
 
-        # Now perform the inversion using Woodbury's Lemma to compute the vector p
-        Ainv = la.block_diag(*blocks)
-
+        # Now perform the PITC matrix inversion using Woodbury's Lemma
         print("Computing low-rank inverse with Woodbury's Lemma")
-        self.pitc_inv = (Ainv - Ainv * self.Knm * la.inv(self.Km + self.Knm.transpose() * Ainv * self.Knm) * self.Knm.transpose() * Ainv)
-        print("Low-rank inverse computation complete!")
+        self.pvec = -la.multi_dot([
+            blockDiagMult(blocks, self.Knm),
+            blockDiagMult(blocks, la.inv(
+                self.Km + self.Knm.transpose() * blockDiagMult(blocks, self.Knm)) * self.Knm.transpose(), left=False),
+            y
+        ])
+        self.pvec += blockDiagMult(blocks, y)
 
-        self.pvec = self.pitc_inv * y
-        self.pvec_augmented = self.Kminv * self.Knm.transpose() * self.pvec
+        # Testing purpose only
+        self.pitc_inv = sla.block_diag(blocks) - la.multi_dot([
+            blockDiagMult(blocks, self.Knm),
+            blockDiagMult(blocks, la.inv(
+                self.Km + self.Knm.transpose() * blockDiagMult(blocks, self.Knm)) * self.Knm.transpose(), left=False)
+        ])
+
+        #self.pvec_without_y = la.block_diag(*blocks) \
+        #                      - blockDiagMult(blocks, self.Knm) * blockDiagMult(blocks, la.inv(self.Km + self.Knm.transpose() * blockDiagMult(blocks, self.Knm)) * self.Knm.transpose(), left=False)
+        print("Low-rank inverse computation complete!")
 
         self.wBlocks = []
         self.vBlocks = []
@@ -229,7 +310,7 @@ class PICGaussian:
     def train(self, X, y, numInduced, numBlocks):
         # For now, just use the cluster points as the induced inputs...
         print("Training Gaussian Process with PIC approximation...")
-        induced = X[np.random.choice(np.array(range(len(X))), replace=False, size=numInduced)] # self.getFPC_clusters(X, numInduced)
+        induced = self.cluster(X, numInduced)
 
         # Place the training inputs into blocks
         blockedX, blockedY = self.getBlocks(X, y, numBlocks)
